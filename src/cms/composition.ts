@@ -15,7 +15,9 @@ export function canContainComponent(
     return rootAllowedChildren.includes(childType);
   }
 
-  return componentDefinitions[parentType].allowedChildren.includes(childType);
+  const allowedChildren: readonly ComponentType[] =
+    componentDefinitions[parentType].allowedChildren;
+  return allowedChildren.includes(childType);
 }
 
 export function createComponentNode(

@@ -11,7 +11,9 @@ import type {
 export const editorTypeFor = (type: ComponentType): string =>
   `astro-cms-${type.toLowerCase()}`;
 
-export function nodeToEditorComponent(node: ComponentNode): ComponentDefinition {
+export function nodeToEditorComponent(
+  node: ComponentNode,
+): ComponentDefinition {
   return {
     type: editorTypeFor(node.type),
     cmsId: node.id,

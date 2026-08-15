@@ -12,6 +12,7 @@ const Component = componentRegistry[node.type] as any;
 const componentProps = {
   ...node.props,
   editorId: editorMode ? node.id : undefined,
+  editorSlot: editorMode ? "default" : undefined,
 };
 ---
 

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import homeDocumentJson from "../content/pages/home.json";
+import homeDocumentJson from "../../content/pages/home.json";
 import { componentNodeSchema } from "./document-schema";
 import { assertPageDocument, validatePageDocument } from "./validation";
 

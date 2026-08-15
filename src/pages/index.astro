@@ -1,18 +1,16 @@
 ---
 import DocumentRenderer from "../components/renderer/DocumentRenderer.astro";
-import { assertPageDocument } from "../cms/validation";
-import homeDocumentJson from "../content/pages/home.json";
+import { readLocalPageDocument } from "../cms/local-page-store";
 import BaseLayout from "../layouts/BaseLayout.astro";
 
-const homeDocument = assertPageDocument(homeDocumentJson);
+const homeDocument = await readLocalPageDocument("/");
 ---
 
-<BaseLayout
-  title={homeDocument.title}
-  description={homeDocument.description}
->
+<BaseLayout title={homeDocument.title} description={homeDocument.description}>
   <header class="prototype-notice">
-    <p><strong>Native Astro output.</strong> No editor runtime is loaded on this page.</p>
+    <p>
+      <strong>Native Astro output.</strong> No editor runtime is loaded on this page.
+    </p>
     <nav aria-label="Prototype links">
       <a href="/preview">Preview metadata</a>
       <a href="/admin">Editor scaffold</a>

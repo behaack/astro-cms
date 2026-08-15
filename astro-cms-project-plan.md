@@ -131,6 +131,8 @@ Puck and similar React component editors are intentionally excluded as the core 
 
 Astro-CMS may use browser JavaScript for editing mechanics, but native `.astro` components remain the only implementation of the published design system.
 
+The private editor shell may itself be a React island. That is an implementation detail of the administration interface, not a second website renderer: React must never supply render functions or replicas for registered Astro components, and the neutral document must remain the boundary between the editor and Astro.
+
 ---
 
 ## 6. Editing Engine: GrapesJS Core
@@ -187,7 +189,57 @@ The exact-preview bridge has passed its first architectural proof:
 - Phone, tablet, and desktop preview widths use the native responsive CSS.
 - Invalid nesting is rejected before it reaches the renderer.
 
-This resolves preview questions 4 and 5 in favor of a validated draft protocol plus a continuously updated exact-preview pane. It does not complete the GrapesJS go/no-go decision: constrained drag-and-drop, reordering, removal, selection synchronization, rapid-edit latency, and interactive Astro islands still require deliberate testing.
+This resolves preview questions 4 and 5 in favor of a validated draft protocol plus a continuously updated exact-preview pane. The composition update below resolves constrained pointer-based drag-and-drop, reordering, removal, and selection synchronization; rapid-edit latency, reusable templates, durable reload, and interactive Astro islands still require deliberate testing.
+
+### Composition Spike Update — 2026-08-15
+
+The safe-composition layer has now passed a browser-driven vertical test:
+
+- A user can start with an empty document and assemble `Section → Stack → Heading/Text/Button` through visible controls.
+- The page root accepts only `Section`; `Section` and `Stack` accept only their declared child types; leaf components accept none.
+- One placement policy drives explicit insertion and GrapesJS draggable/droppable hooks.
+- A document-tree view stays synchronized with GrapesJS selection and the exact Astro preview.
+- Moving a component preserves its stable ID.
+- Duplicating a subtree generates fresh IDs for the root and every descendant.
+- Delete followed by undo restores the exact deleted IDs and structure.
+- Every accepted operation remains a valid neutral document and reaches the server-rendered Astro iframe.
+- The tested phone preview has no horizontal overflow.
+- Real Chromium pointer tests can drag `Section` to the page root, `Stack` into `Section`, and `Heading` into `Stack`.
+- An invalid `Text` drop at the page root is rejected visibly and leaves the neutral document unchanged.
+- Reordering two sections by pointer reverses their canonical order without changing either ID.
+
+**GrapesJS go decision:** keep GrapesJS Core as the editing-mechanics dependency and proceed to the local vertical slice. The engine has now preserved the neutral document contract through exact preview, constrained pointer insertion, invalid-drop rejection, pointer reordering, explicit composition commands, and stable identity handling.
+
+This is not evidence that the complete product is solved. Reusable templates, interactive Astro islands, rapid-edit latency under sustained editing, and nontechnical-user usability remain open.
+
+### Local Save/Reload Update — 2026-08-15
+
+The first durable local vertical slice is now implemented:
+
+- The private editor shell is hydrated as a React island, while GrapesJS remains an imperative editing adapter inside it.
+- React does not render or duplicate any website component.
+- A server-side local storage adapter validates neutral documents and maps the `/` route to `content/pages/home.json`.
+- Saves write a uniquely named temporary file and replace the page file only after the complete document has been written.
+- The public page, metadata preview, and editor initialization all read the same project file on request.
+- Reload passes through the server storage adapter rather than browser storage.
+- The file remains formatted, inspectable JSON suitable for Git review.
+
+This proves local durability and editor-shell isolation. It does not yet prove hosted persistence, multi-user concurrency, Git publishing, reusable compositions, or nontechnical-user usability.
+
+### Direct Astro Canvas Update — 2026-08-15
+
+The actual Astro-rendered iframe is now the primary editing canvas rather than a secondary proof pane:
+
+- Clicking a rendered Astro node selects the matching stable component ID and updates its property controls.
+- Editor-only slot markers identify valid child containers without exposing component-internal HTML to the editor.
+- Choosing a palette component reveals only insertion points allowed by the neutral placement policy.
+- Palette components can be dragged directly to those insertion points.
+- Existing Astro-rendered components can be pointer-dragged to compatible insertion points for reordering.
+- Direct moves change the neutral document, preserve stable IDs, and return through the native Astro renderer.
+- GrapesJS remains mounted offscreen as the structure, trait, selection, and history engine; it is no longer the visual surface presented as the page.
+- Editor slot markers and insertion controls are absent from the published route, which still loads neither React nor GrapesJS.
+
+Browser verification selected a native heading, inserted a component through an Astro insertion point, dragged a palette Section into the canvas, and reversed two root Sections by pointer while preserving both IDs. The remaining product risks are sustained-edit latency, inline text editing, reusable compositions, and nontechnical-user usability.
 
 ---
 
@@ -409,15 +461,15 @@ The preview system must:
 - Keep editor-only metadata out of production output.
 - Render interactive islands using their normal Astro integration when previewing.
 
-### Preview Spike Options
+### Preview Spike Decision
 
-The first spike should compare:
+The spike compared:
 
 1. Astro-rendered component fragments inside GrapesJS custom views.
 2. A full Astro-rendered iframe coordinated with GrapesJS selection and commands.
 3. A composition canvas plus a continuously updated exact-preview pane.
 
-The project should not commit to a polished editor architecture until one option proves exact rendering, reliable selection, safe nesting, and acceptable latency.
+Option 2 is selected, extended so that the full Astro-rendered iframe is the primary direct-editing canvas. GrapesJS remains a private mechanics engine and the neutral document remains the integration boundary. Sustained-edit latency still requires deliberate measurement before this becomes a polished editor architecture.
 
 ---
 
@@ -723,16 +775,18 @@ Failing the GrapesJS spike does not invalidate the Astro-CMS architecture. It me
 - Define slot and nesting rules.
 - Prototype the GrapesJS adapter.
 - Prove native Astro preview.
-- Make the GrapesJS go/no-go decision.
+- Record the GrapesJS go decision and its tested boundary.
 
 ### Phase 1 — Local Vertical Slice
 
 - Build the generated Astro registry.
-- Build page read/write and validation.
-- Build the constrained component library panel.
-- Build property editing.
-- Build exact responsive preview.
-- Save and reload locally.
+- **Implemented:** page read/write and validation for the `/` route.
+- **Implemented:** constrained component library panel.
+- **Implemented:** property editing.
+- **Implemented:** exact responsive preview.
+- **Implemented:** direct selection, insertion, and pointer reordering in the Astro-rendered canvas.
+- **Implemented:** atomic local save and server-backed reload.
+- Complete the generated Astro registry beyond the six-component prototype.
 
 ### Phase 2 — Reusable Compositions
 
@@ -829,7 +883,7 @@ Mitigation:
 2. Exact component-registration API.
 3. How static imports and registry generation work.
 4. **Resolved for the spike:** validated neutral JSON reaches an ephemeral server-side draft store and is addressed by draft ID.
-5. **Resolved for the spike:** a continuously updated, full Astro-rendered iframe is the exact-preview strategy.
+5. **Resolved for the spike:** a continuously updated, full Astro-rendered iframe is both the exact-preview strategy and the primary direct-editing canvas.
 6. How inline text changes map back to typed properties.
 7. Slot rules and allowed-child declarations.
 8. Template versus linked-component behavior in the first release.

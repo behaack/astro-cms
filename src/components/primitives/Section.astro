@@ -3,16 +3,20 @@ interface Props {
   tone?: "plain" | "soft" | "brand";
   width?: "narrow" | "wide" | "full";
   editorId?: string;
+  editorSlot?: string;
 }
 
-const { tone = "plain", width = "wide", editorId } = Astro.props;
+const { tone = "plain", width = "wide", editorId, editorSlot } = Astro.props;
 ---
 
 <section
   class:list={["cms-section", `cms-section--${tone}`]}
   data-astro-cms-node={editorId}
 >
-  <div class:list={["cms-section__inner", `cms-section__inner--${width}`]}>
+  <div
+    class:list={["cms-section__inner", `cms-section__inner--${width}`]}
+    data-astro-cms-slot={editorSlot}
+  >
     <slot />
   </div>
 </section>
@@ -33,8 +37,7 @@ const { tone = "plain", width = "wide", editorId } = Astro.props;
   .cms-section--brand {
     color: #f7fff9;
     background:
-      radial-gradient(circle at 80% 20%, #447663 0, transparent 35%),
-      #173c30;
+      radial-gradient(circle at 80% 20%, #447663 0, transparent 35%), #173c30;
   }
 
   .cms-section__inner {

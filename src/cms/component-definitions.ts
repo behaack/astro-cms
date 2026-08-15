@@ -1,7 +1,4 @@
-import type {
-  ComponentDefinition,
-  ComponentType,
-} from "./document-types";
+import type { ComponentDefinition, ComponentType } from "./document-types";
 
 const sectionContent: readonly ComponentType[] = [
   "Stack",

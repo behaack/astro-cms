@@ -3,14 +3,16 @@ interface Props {
   gap?: "small" | "medium" | "large";
   align?: "start" | "center";
   editorId?: string;
+  editorSlot?: string;
 }
 
-const { gap = "medium", align = "start", editorId } = Astro.props;
+const { gap = "medium", align = "start", editorId, editorSlot } = Astro.props;
 ---
 
 <div
   class:list={["cms-stack", `cms-stack--${gap}`, `cms-stack--${align}`]}
   data-astro-cms-node={editorId}
+  data-astro-cms-slot={editorSlot}
 >
   <slot />
 </div>

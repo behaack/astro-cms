@@ -24,7 +24,10 @@ export function validatePageDocument(input: unknown): ValidationIssue[] {
     const definition = componentDefinitions[node.type];
 
     if (seenIds.has(node.id)) {
-      issues.push({ nodeId: node.id, message: `Duplicate node id: ${node.id}` });
+      issues.push({
+        nodeId: node.id,
+        message: `Duplicate node id: ${node.id}`,
+      });
     }
     seenIds.add(node.id);
 

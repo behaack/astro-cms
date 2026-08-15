@@ -1,10 +1,9 @@
 ---
 import DocumentRenderer from "../components/renderer/DocumentRenderer.astro";
-import { assertPageDocument } from "../cms/validation";
-import homeDocumentJson from "../content/pages/home.json";
+import { readLocalPageDocument } from "../cms/local-page-store";
 import BaseLayout from "../layouts/BaseLayout.astro";
 
-const homeDocument = assertPageDocument(homeDocumentJson);
+const homeDocument = await readLocalPageDocument("/");
 ---
 
 <BaseLayout
@@ -13,7 +12,8 @@ const homeDocument = assertPageDocument(homeDocumentJson);
 >
   <header class="prototype-notice">
     <p>
-      <strong>Astro preview mode.</strong> Component boundaries carry stable editor IDs.
+      <strong>Astro preview mode.</strong> Component boundaries carry stable editor
+      IDs.
     </p>
     <nav aria-label="Prototype links">
       <a href="/">Published view</a>

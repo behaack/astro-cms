@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from "vitest";
 
-import homeDocumentJson from "../content/pages/home.json";
+import homeDocumentJson from "../../content/pages/home.json";
 import {
   clearLivePreviewDrafts,
   getLivePreviewDraft,
