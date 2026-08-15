@@ -1,0 +1,472 @@
+---
+import "grapesjs/dist/css/grapes.min.css";
+
+import { componentDefinitions } from "../../cms/component-definitions";
+import { assertPageDocument } from "../../cms/validation";
+import homeDocumentJson from "../../content/pages/home.json";
+import BaseLayout from "../../layouts/BaseLayout.astro";
+
+const homeDocument = assertPageDocument(homeDocumentJson);
+const serializedDocument = JSON.stringify(homeDocument).replaceAll(
+  "<",
+  "\\u003c",
+);
+---
+
+<BaseLayout title="Editor Scaffold · Astro-CMS">
+  <main class="editor-shell">
+    <header class="editor-toolbar">
+      <div>
+        <p class="eyebrow">Astro-CMS feasibility prototype</p>
+        <h1>Constrained component editor</h1>
+      </div>
+      <div class="toolbar-actions">
+        <button id="blank-button" type="button">Start blank</button>
+        <button id="undo-button" type="button">Undo</button>
+        <button id="redo-button" type="button">Redo</button>
+        <button id="reset-button" type="button">Reset</button>
+        <a href="/preview" target="_blank">Checked-in preview</a>
+      </div>
+    </header>
+
+    <section class="milestone-note">
+      <strong>Current milestone:</strong> every valid editor change is sent as a neutral
+      document to the server and rendered below by the same native Astro component
+      tree used by the published page.
+    </section>
+
+    <div class="editor-workspace">
+      <aside class="editor-sidebar" aria-label="Available components">
+        <h2>Components</h2>
+        <div id="cms-blocks"></div>
+        <section class="composition-tools" aria-labelledby="composition-heading">
+          <h2 id="composition-heading">Compose</h2>
+          <label for="add-component-type">Component type</label>
+          <div class="composition-tools__add">
+            <select id="add-component-type">
+              {
+                Object.values(componentDefinitions).map((definition) => (
+                  <option value={definition.type}>{definition.label}</option>
+                ))
+              }
+            </select>
+            <button id="add-component-button" type="button">Add</button>
+          </div>
+          <div class="composition-tools__actions" aria-label="Selected component actions">
+            <button id="move-up-button" type="button">Move up</button>
+            <button id="move-down-button" type="button">Move down</button>
+            <button id="duplicate-button" type="button">Duplicate</button>
+            <button id="delete-button" type="button">Delete</button>
+          </div>
+          <p id="composition-status" aria-live="polite">
+            Select a component or the page.
+          </p>
+        </section>
+        <section class="document-tree-panel" aria-labelledby="document-tree-heading">
+          <h2 id="document-tree-heading">Document tree</h2>
+          <div id="cms-layer-tree" role="tree" aria-label="Page structure"></div>
+        </section>
+      </aside>
+
+      <section class="canvas-panel" aria-label="Composition canvas">
+        <div id="cms-canvas"></div>
+      </section>
+
+      <aside
+        class="editor-sidebar editor-sidebar--right"
+        aria-label="Properties"
+      >
+        <h2>Properties</h2>
+        <div id="cms-properties"></div>
+        <div class="validation-card">
+          <h2>Validation</h2>
+          <p id="cms-validation">Checking document…</p>
+        </div>
+      </aside>
+    </div>
+
+    <section class="live-preview-panel" aria-labelledby="live-preview-heading">
+      <div class="live-preview-panel__header">
+        <div>
+          <p class="eyebrow">Server-rendered proof</p>
+          <h2 id="live-preview-heading">Live Astro preview</h2>
+          <p id="live-preview-status" aria-live="polite">
+            Preparing the first Astro render…
+          </p>
+        </div>
+        <div class="preview-actions">
+          <div class="preview-size-controls" aria-label="Preview width">
+            <button type="button" data-preview-width="390px">Phone</button>
+            <button type="button" data-preview-width="768px">Tablet</button>
+            <button type="button" data-preview-width="100%" data-active
+              >Desktop</button
+            >
+          </div>
+          <button id="refresh-preview-button" type="button"
+            >Refresh Astro preview</button
+          >
+          <a id="open-live-preview" href="/preview" target="_blank" hidden>
+            Open live preview
+          </a>
+        </div>
+      </div>
+      <div id="live-preview-frame-shell" class="live-preview-frame-shell">
+        <iframe
+          id="live-preview-frame"
+          title="Live server-rendered Astro preview"></iframe>
+      </div>
+    </section>
+
+    <section class="document-panel">
+      <div class="document-panel__header">
+        <div>
+          <p class="eyebrow">Canonical output</p>
+          <h2>Neutral Astro-CMS document</h2>
+        </div>
+        <div class="toolbar-actions">
+          <button id="save-browser-button" type="button"
+            >Save browser draft</button
+          >
+          <button id="load-browser-button" type="button"
+            >Load browser draft</button
+          >
+        </div>
+      </div>
+      <p id="save-status" aria-live="polite"></p>
+      <pre><code id="cms-document-output" /></pre>
+    </section>
+  </main>
+
+  <script
+    id="initial-document"
+    type="application/json"
+    set:html={serializedDocument}
+    is:inline
+  />
+  <script>
+    import "../../editor/start-editor";
+  </script>
+</BaseLayout>
+
+<style>
+  .editor-shell {
+    min-height: 100vh;
+    padding: 1rem;
+    background: #e7ece8;
+  }
+
+  .editor-toolbar,
+  .document-panel__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+  }
+
+  .editor-toolbar {
+    margin-bottom: 1rem;
+    padding: 1rem 1.25rem;
+    border-radius: 0.9rem;
+    color: #f4fbf7;
+    background: #173c30;
+  }
+
+  h1,
+  h2,
+  p {
+    margin-top: 0;
+  }
+
+  h1 {
+    margin-bottom: 0;
+    font-size: 1.35rem;
+  }
+
+  h2 {
+    margin-bottom: 0.75rem;
+    font-size: 1rem;
+  }
+
+  .eyebrow {
+    margin-bottom: 0.2rem;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.09em;
+    opacity: 0.72;
+    text-transform: uppercase;
+  }
+
+  .toolbar-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  .toolbar-actions button,
+  .toolbar-actions a {
+    padding: 0.55rem 0.8rem;
+    border: 1px solid #92ab9f;
+    border-radius: 0.5rem;
+    color: inherit;
+    background: transparent;
+    cursor: pointer;
+    text-decoration: none;
+  }
+
+  .milestone-note {
+    margin-bottom: 1rem;
+    padding: 0.85rem 1rem;
+    border: 1px solid #b7c7be;
+    border-radius: 0.75rem;
+    background: #f7faf8;
+    line-height: 1.5;
+  }
+
+  .editor-workspace {
+    display: grid;
+    grid-template-columns: minmax(12rem, 16rem) minmax(30rem, 1fr) minmax(
+        14rem,
+        18rem
+      );
+    min-height: 68vh;
+    overflow: hidden;
+    border: 1px solid #bdc9c2;
+    border-radius: 0.9rem;
+    background: #fff;
+  }
+
+  .editor-sidebar {
+    padding: 1rem;
+    overflow: auto;
+    border-right: 1px solid #d4ddd8;
+    background: #f7f9f7;
+  }
+
+  .editor-sidebar--right {
+    border-right: 0;
+    border-left: 1px solid #d4ddd8;
+  }
+
+  .canvas-panel {
+    min-height: 68vh;
+  }
+
+  #cms-canvas {
+    height: 68vh;
+  }
+
+  .validation-card {
+    margin-top: 2rem;
+    padding-top: 1rem;
+    border-top: 1px solid #d4ddd8;
+  }
+
+  .composition-tools,
+  .document-tree-panel {
+    margin-top: 1.25rem;
+    padding-top: 1.25rem;
+    border-top: 1px solid #d4ddd8;
+  }
+
+  .composition-tools label {
+    display: block;
+    margin-bottom: 0.35rem;
+    color: #52645c;
+    font-size: 0.78rem;
+    font-weight: 700;
+  }
+
+  .composition-tools__add,
+  .composition-tools__actions {
+    display: grid;
+    gap: 0.45rem;
+  }
+
+  .composition-tools__add {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .composition-tools__actions {
+    grid-template-columns: 1fr 1fr;
+    margin-top: 0.55rem;
+  }
+
+  .composition-tools select,
+  .composition-tools button,
+  .tree-item {
+    min-width: 0;
+    padding: 0.5rem 0.6rem;
+    border: 1px solid #aebfb6;
+    border-radius: 0.45rem;
+    color: #173c30;
+    background: #fff;
+  }
+
+  .composition-tools button,
+  .tree-item {
+    cursor: pointer;
+  }
+
+  .composition-tools button:disabled {
+    cursor: not-allowed;
+    opacity: 0.45;
+  }
+
+  #composition-status {
+    min-height: 2.4rem;
+    margin: 0.65rem 0 0;
+    color: #52645c;
+    font-size: 0.78rem;
+    line-height: 1.45;
+  }
+
+  #composition-status[data-state="error"] {
+    color: #a2392b;
+  }
+
+  #composition-status[data-state="success"] {
+    color: #17623d;
+  }
+
+  #cms-layer-tree {
+    display: grid;
+    gap: 0.28rem;
+  }
+
+  .tree-item {
+    width: 100%;
+    padding-left: calc(0.55rem + var(--tree-depth, 0) * 0.8rem);
+    overflow: hidden;
+    text-align: left;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .tree-item[aria-selected="true"] {
+    border-color: #315f50;
+    color: #fff;
+    background: #315f50;
+  }
+
+  #cms-validation[data-state="valid"] {
+    color: #17623d;
+  }
+
+  #cms-validation[data-state="invalid"] {
+    color: #a2392b;
+  }
+
+  .document-panel {
+    margin-top: 1rem;
+    padding: 1rem 1.25rem;
+    border: 1px solid #bdc9c2;
+    border-radius: 0.9rem;
+    background: #fff;
+  }
+
+  .document-panel pre {
+    max-height: 28rem;
+    margin: 1rem 0 0;
+    padding: 1rem;
+    overflow: auto;
+    border-radius: 0.6rem;
+    color: #dcece4;
+    background: #14231e;
+    font-size: 0.8rem;
+  }
+
+  .live-preview-panel {
+    margin-top: 1rem;
+    padding: 1rem 1.25rem 1.25rem;
+    border: 1px solid #bdc9c2;
+    border-radius: 0.9rem;
+    background: #fff;
+  }
+
+  .live-preview-panel__header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 1rem;
+  }
+
+  #live-preview-status {
+    margin: 0.35rem 0 0;
+    color: #52645c;
+    font-size: 0.88rem;
+  }
+
+  #live-preview-status[data-state="ready"] {
+    color: #17623d;
+  }
+
+  #live-preview-status[data-state="error"] {
+    color: #a2392b;
+  }
+
+  .preview-actions,
+  .preview-size-controls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  .preview-actions {
+    justify-content: flex-end;
+  }
+
+  .preview-actions button,
+  .preview-actions a {
+    padding: 0.55rem 0.8rem;
+    border: 1px solid #92ab9f;
+    border-radius: 0.5rem;
+    color: #173c30;
+    background: #fff;
+    cursor: pointer;
+    text-decoration: none;
+  }
+
+  .preview-size-controls button[data-active] {
+    color: #fff;
+    background: #315f50;
+  }
+
+  .live-preview-frame-shell {
+    width: 100%;
+    max-width: 100%;
+    margin: 0 auto;
+    overflow: hidden;
+    border: 1px solid #b7c7be;
+    border-radius: 0.75rem;
+    background: #f7f9f7;
+    transition: max-width 180ms ease;
+  }
+
+  #live-preview-frame {
+    display: block;
+    width: 100%;
+    min-height: 42rem;
+    border: 0;
+    background: #fff;
+  }
+
+  @media (max-width: 1000px) {
+    .editor-workspace {
+      grid-template-columns: 13rem minmax(28rem, 1fr);
+      overflow-x: auto;
+    }
+
+    .editor-sidebar--right {
+      display: none;
+    }
+
+    .live-preview-panel__header {
+      flex-direction: column;
+    }
+
+    .preview-actions {
+      justify-content: flex-start;
+    }
+  }
+</style>

@@ -1,0 +1,19 @@
+---
+import type { PageDocument } from "../../cms/document-types";
+import DocumentNode from "./DocumentNode.astro";
+
+interface Props {
+  document: PageDocument;
+  editorMode?: boolean;
+}
+
+const { document, editorMode = false } = Astro.props;
+---
+
+<main data-astro-cms-document={editorMode ? document.route : undefined}>
+  {
+    document.content.map((node) => (
+      <DocumentNode node={node} editorMode={editorMode} />
+    ))
+  }
+</main>

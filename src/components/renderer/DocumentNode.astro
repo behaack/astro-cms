@@ -1,0 +1,24 @@
+---
+import { componentRegistry } from "../../cms/component-registry";
+import type { ComponentNode } from "../../cms/document-types";
+
+interface Props {
+  node: ComponentNode;
+  editorMode?: boolean;
+}
+
+const { node, editorMode = false } = Astro.props;
+const Component = componentRegistry[node.type] as any;
+const componentProps = {
+  ...node.props,
+  editorId: editorMode ? node.id : undefined,
+};
+---
+
+<Component {...componentProps}>
+  {
+    node.children?.map((child) => (
+      <Astro.self node={child} editorMode={editorMode} />
+    ))
+  }
+</Component>

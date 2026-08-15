@@ -1,0 +1,56 @@
+---
+interface Props {
+  label: string;
+  href: string;
+  appearance?: "primary" | "secondary" | "quiet";
+  editorId?: string;
+}
+
+const { label, href, appearance = "primary", editorId } = Astro.props;
+---
+
+<a
+  class:list={["cms-button", `cms-button--${appearance}`]}
+  href={href}
+  data-astro-cms-node={editorId}
+>
+  {label}
+  <span aria-hidden="true">→</span>
+</a>
+
+<style>
+  .cms-button {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.65rem;
+    min-height: 3rem;
+    padding: 0.75rem 1.1rem;
+    border: 1px solid transparent;
+    border-radius: 999px;
+    font-weight: 650;
+    text-decoration: none;
+    transition:
+      transform 160ms ease,
+      background 160ms ease;
+  }
+
+  .cms-button:hover {
+    transform: translateY(-2px);
+  }
+
+  .cms-button--primary {
+    color: #f7fff9;
+    background: #173c30;
+  }
+
+  .cms-button--secondary {
+    color: #173c30;
+    background: #d7f3e5;
+  }
+
+  .cms-button--quiet {
+    color: inherit;
+    border-color: currentColor;
+    background: transparent;
+  }
+</style>

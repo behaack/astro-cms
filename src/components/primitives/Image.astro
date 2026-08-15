@@ -1,0 +1,45 @@
+---
+interface Props {
+  src: string;
+  alt: string;
+  aspect?: "landscape" | "square";
+  editorId?: string;
+}
+
+const { src, alt, aspect = "landscape", editorId } = Astro.props;
+---
+
+<figure
+  class:list={["cms-image", `cms-image--${aspect}`]}
+  data-astro-cms-node={editorId}
+>
+  <img src={src} alt={alt} loading="lazy" />
+</figure>
+
+<style>
+  .cms-image {
+    width: 100%;
+    margin: 0;
+    overflow: hidden;
+    border: 1px solid #cbd7d0;
+    border-radius: 1.5rem;
+    background: #dfe9e3;
+    box-shadow: 0 1.5rem 4rem rgb(23 60 48 / 12%);
+  }
+
+  .cms-image--landscape {
+    aspect-ratio: 16 / 8;
+  }
+
+  .cms-image--square {
+    aspect-ratio: 1;
+    max-width: 42rem;
+  }
+
+  .cms-image img {
+    width: 100%;
+    height: 100%;
+    display: block;
+    object-fit: cover;
+  }
+</style>

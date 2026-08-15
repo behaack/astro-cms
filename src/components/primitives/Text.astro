@@ -1,0 +1,19 @@
+---
+interface Props {
+  text: string;
+  editorId?: string;
+}
+
+const { text, editorId } = Astro.props;
+---
+
+<p class="cms-text" data-astro-cms-node={editorId}>{text}</p>
+
+<style>
+  .cms-text {
+    max-width: 64ch;
+    margin: 0;
+    font-size: clamp(1.05rem, 1.7vw, 1.35rem);
+    line-height: 1.65;
+  }
+</style>

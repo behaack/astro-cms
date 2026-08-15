@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 600" role="img" aria-labelledby="title description">
+  <title id="title">Structured component grid</title>
+  <desc id="description">A geometric arrangement of green rounded rectangles representing reusable page components.</desc>
+  <rect width="1200" height="600" fill="#dce9e1"/>
+  <g fill="none" stroke="#315f50" stroke-width="4">
+    <rect x="80" y="80" width="1040" height="440" rx="36"/>
+    <rect x="130" y="130" width="400" height="140" rx="24" fill="#f6faf7"/>
+    <rect x="560" y="130" width="510" height="140" rx="24" fill="#b9d4c5"/>
+    <rect x="130" y="300" width="290" height="170" rx="24" fill="#91b7a2"/>
+    <rect x="450" y="300" width="290" height="170" rx="24" fill="#f6faf7"/>
+    <rect x="770" y="300" width="300" height="170" rx="24" fill="#173c30"/>
+  </g>
+  <g fill="#315f50">
+    <rect x="175" y="170" width="260" height="16" rx="8"/>
+    <rect x="175" y="205" width="185" height="12" rx="6" opacity=".55"/>
+    <rect x="605" y="170" width="310" height="16" rx="8"/>
+    <rect x="605" y="205" width="210" height="12" rx="6" opacity=".55"/>
+  </g>
+</svg>

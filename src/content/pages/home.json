@@ -1,0 +1,96 @@
+{
+  "schemaVersion": 1,
+  "route": "/",
+  "title": "Astro-CMS Feasibility Prototype",
+  "description": "Native Astro components rendered from a neutral component document.",
+  "content": [
+    {
+      "id": "hero-section",
+      "type": "Section",
+      "props": {
+        "tone": "brand",
+        "width": "wide"
+      },
+      "children": [
+        {
+          "id": "hero-stack",
+          "type": "Stack",
+          "props": {
+            "gap": "medium",
+            "align": "start"
+          },
+          "children": [
+            {
+              "id": "hero-heading",
+              "type": "Heading",
+              "props": {
+                "text": "Visual freedom without design-system drift",
+                "level": 1
+              }
+            },
+            {
+              "id": "hero-copy",
+              "type": "Text",
+              "props": {
+                "text": "Marketing assembles pages from trusted native Astro components while developers retain control of the responsive design."
+              }
+            },
+            {
+              "id": "hero-button",
+              "type": "Button",
+              "props": {
+                "label": "Open the editor scaffold",
+                "href": "/admin",
+                "appearance": "secondary"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "explanation-section",
+      "type": "Section",
+      "props": {
+        "tone": "plain",
+        "width": "wide"
+      },
+      "children": [
+        {
+          "id": "explanation-stack",
+          "type": "Stack",
+          "props": {
+            "gap": "large",
+            "align": "start"
+          },
+          "children": [
+            {
+              "id": "explanation-heading",
+              "type": "Heading",
+              "props": {
+                "text": "One document, one Astro renderer",
+                "level": 2
+              }
+            },
+            {
+              "id": "explanation-copy",
+              "type": "Text",
+              "props": {
+                "text": "The JSON document stores component identities and approved properties. It does not store generated HTML as the editing source."
+              }
+            },
+            {
+              "id": "explanation-image",
+              "type": "Image",
+              "props": {
+                "src": "/abstract-grid.svg",
+                "alt": "A structured grid representing composable page sections",
+                "aspect": "landscape"
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

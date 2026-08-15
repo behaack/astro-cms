@@ -1,0 +1,44 @@
+---
+interface Props {
+  gap?: "small" | "medium" | "large";
+  align?: "start" | "center";
+  editorId?: string;
+}
+
+const { gap = "medium", align = "start", editorId } = Astro.props;
+---
+
+<div
+  class:list={["cms-stack", `cms-stack--${gap}`, `cms-stack--${align}`]}
+  data-astro-cms-node={editorId}
+>
+  <slot />
+</div>
+
+<style>
+  .cms-stack {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .cms-stack--small {
+    gap: 0.75rem;
+  }
+
+  .cms-stack--medium {
+    gap: 1.5rem;
+  }
+
+  .cms-stack--large {
+    gap: clamp(2rem, 5vw, 4rem);
+  }
+
+  .cms-stack--start {
+    align-items: flex-start;
+  }
+
+  .cms-stack--center {
+    align-items: center;
+    text-align: center;
+  }
+</style>
