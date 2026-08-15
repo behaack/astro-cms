@@ -20,6 +20,7 @@ import type {
   PageDocument,
   PropertyDefinition,
 } from "../cms/document-types";
+import type { ReusableTemplate } from "../cms/template-types";
 import { assertPageDocument, validatePageDocument } from "../cms/validation";
 import {
   editorComponentToNode,
@@ -27,6 +28,10 @@ import {
   editorTypeFor,
   nodeToEditorComponent,
 } from "./document-adapter";
+import {
+  createReusableTemplateControls,
+  type ReusableTemplateControls,
+} from "./reusable-template-controls";
 
 const initialDocumentElement =
   document.querySelector<HTMLScriptElement>("#initial-document");
@@ -269,15 +274,28 @@ const saveStatus = document.querySelector<HTMLElement>("#save-status");
 const saveProjectButton = document.querySelector<HTMLButtonElement>(
   "#save-project-button",
 );
+const publishProjectButton = document.querySelector<HTMLButtonElement>(
+  "#publish-project-button",
+);
 const reloadProjectButton = document.querySelector<HTMLButtonElement>(
   "#reload-project-button",
 );
+const templateNameInput =
+  document.querySelector<HTMLInputElement>("#template-name");
+const saveTemplateButton = document.querySelector<HTMLButtonElement>(
+  "#save-template-button",
+);
+const reusableTemplateList = document.querySelector<HTMLElement>(
+  "#reusable-template-list",
+);
+const templateStatus = document.querySelector<HTMLElement>("#template-status");
 
 let activeComponent: Component | null = null;
 let lastDeletedCmsId: string | undefined;
 let livePreviewDraftId: string | undefined;
 let livePreviewTimer: ReturnType<typeof setTimeout> | undefined;
 let livePreviewRequest = 0;
+let reusableTemplateControls: ReusableTemplateControls | undefined;
 
 const PALETTE_DRAG_MIME = "application/x-astro-cms-component";
 const COMPONENT_DRAG_MIME = "application/x-astro-cms-node";
@@ -406,6 +424,7 @@ function selectComponent(component: Component): void {
   editor.select(component);
   renderCompositionTree();
   updateCompositionActions();
+  reusableTemplateControls?.refreshSelection();
   syncLivePreviewSelection();
 }
 
@@ -649,6 +668,51 @@ function insertComponentAt(
   setCompositionStatus(`${type} added at ${placementDescription}.`, "success");
   refreshDocumentOutput();
   return created;
+}
+
+function selectedComponentNode(): ComponentNode | null {
+  if (!activeComponent || activeComponent === wrapper) return null;
+  return editorComponentToNode(activeComponent);
+}
+
+function insertReusableTemplate(template: ReusableTemplate): boolean {
+  const insertion = resolveInsertionPoint(template.root.type);
+  if (!insertion) {
+    setCompositionStatus(
+      `${template.name} cannot be placed here. Select a compatible parent or sibling.`,
+      "error",
+    );
+    return false;
+  }
+
+  const clone = cloneComponentNodeWithFreshIds(template.root);
+  const componentDefinition = nodeToEditorComponent(clone);
+  const canMove = editor.Components.canMove(
+    insertion.parent,
+    componentDefinition,
+    insertion.at,
+  );
+  if (!canMove.result) {
+    setCompositionStatus(
+      `${template.name} was rejected by the placement policy.`,
+      "error",
+    );
+    return false;
+  }
+
+  const created = insertion.parent.append(componentDefinition, {
+    at: insertion.at,
+  })[0];
+  if (!created) return false;
+
+  lastDeletedCmsId = undefined;
+  selectComponent(created);
+  setCompositionStatus(
+    `${template.name} inserted as an independent copy with fresh identities.`,
+    "success",
+  );
+  refreshDocumentOutput();
+  return true;
 }
 
 function addComponent(type: ComponentType): void {
@@ -1497,6 +1561,56 @@ reloadProjectButton?.addEventListener("click", async () => {
     reloadProjectButton.disabled = false;
   }
 });
+
+publishProjectButton?.addEventListener("click", async () => {
+  publishProjectButton.disabled = true;
+  if (saveProjectButton) saveProjectButton.disabled = true;
+  setSaveStatus(
+    "Validating, saving, and creating the Astro production build…",
+    "pending",
+  );
+
+  try {
+    const response = await fetch("/api/publish", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ document: currentDocument() }),
+    });
+    const result = (await response.json()) as PageDocumentResponse;
+    if (!response.ok || !result.ok || !result.document) {
+      throw new Error(
+        pageDocumentResponseMessage(result, "The production build failed."),
+      );
+    }
+
+    setSaveStatus(
+      result.message ?? "Publishable Astro production build created in dist/.",
+      "success",
+    );
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Unknown error";
+    setSaveStatus(`Publish failed: ${message}`, "error");
+  } finally {
+    publishProjectButton.disabled = false;
+    if (saveProjectButton) saveProjectButton.disabled = false;
+  }
+});
+
+if (
+  templateNameInput &&
+  saveTemplateButton &&
+  reusableTemplateList &&
+  templateStatus
+) {
+  reusableTemplateControls = createReusableTemplateControls({
+    nameInput: templateNameInput,
+    saveButton: saveTemplateButton,
+    list: reusableTemplateList,
+    status: templateStatus,
+    selectedNode: selectedComponentNode,
+    insertTemplate: insertReusableTemplate,
+  });
+}
 
 selectInitialComponent();
 selectPaletteType(selectedComponentType());

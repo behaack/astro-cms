@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it } from "vitest";
 
 import homeDocumentJson from "../../content/pages/home.json";
+import { requireNodeByType } from "./document-test-helpers";
 import {
   clearLivePreviewDrafts,
   getLivePreviewDraft,
@@ -33,7 +34,7 @@ describe("live preview store", () => {
     if (!first.ok) return;
 
     const updatedDocument = structuredClone(originalDocument);
-    updatedDocument.content[0].children![0].children![0].props.text =
+    requireNodeByType(updatedDocument, "Heading").props.text =
       "Rendered live by Astro";
 
     const second = saveLivePreviewDraft(updatedDocument, first.draft.id, 2_000);
@@ -43,15 +44,20 @@ describe("live preview store", () => {
 
     expect(second.draft.id).toBe(first.draft.id);
     expect(second.draft.revision).toBe(2);
-    expect(
-      getLivePreviewDraft(second.draft.id, 2_001)?.document.content[0]
-        .children![0].children![0].props.text,
-    ).toBe("Rendered live by Astro");
+    const storedDocument = getLivePreviewDraft(
+      second.draft.id,
+      2_001,
+    )?.document;
+    expect(storedDocument).toBeDefined();
+    if (!storedDocument) return;
+    expect(requireNodeByType(storedDocument, "Heading").props.text).toBe(
+      "Rendered live by Astro",
+    );
   });
 
   it("rejects a structurally invalid document", () => {
     const invalidDocument = structuredClone(originalDocument);
-    const heading = invalidDocument.content[0].children![0].children![0];
+    const heading = requireNodeByType(invalidDocument, "Heading");
     heading.children = [
       {
         id: "illegal-child",

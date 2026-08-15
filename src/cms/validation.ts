@@ -1,22 +1,56 @@
 import { componentDefinitions } from "./component-definitions";
 import { rootAllowedChildren } from "./composition";
-import { pageDocumentSchema } from "./document-schema";
-import type { ComponentNode, PageDocument } from "./document-types";
+import { componentNodeSchema, pageDocumentSchema } from "./document-schema";
+import type {
+  ComponentNode,
+  PageDocument,
+  PropertyDefinition,
+  PropertyValue,
+} from "./document-types";
 
 export interface ValidationIssue {
   nodeId?: string;
   message: string;
 }
 
-export function validatePageDocument(input: unknown): ValidationIssue[] {
-  const parsed = pageDocumentSchema.safeParse(input);
+function isSafeUrl(value: string): boolean {
+  if (value.startsWith("/") || value.startsWith("#")) return true;
 
-  if (!parsed.success) {
-    return parsed.error.issues.map((issue) => ({
-      message: `${issue.path.join(".") || "document"}: ${issue.message}`,
-    }));
+  try {
+    const url = new URL(value);
+    return ["http:", "https:", "mailto:", "tel:"].includes(url.protocol);
+  } catch {
+    return false;
+  }
+}
+
+function propertyIssue(
+  property: PropertyDefinition,
+  value: PropertyValue,
+): string | undefined {
+  if (property.type === "boolean") {
+    return typeof value === "boolean" ? undefined : "must be true or false";
   }
 
+  if (property.type === "select") {
+    const allowed = property.options?.some((option) =>
+      Object.is(option.id, value),
+    );
+    return allowed ? undefined : "must use an approved option";
+  }
+
+  if (typeof value !== "string") return "must be text";
+  if (property.type === "url" && !isSafeUrl(value)) {
+    return "must be a safe relative, HTTP, HTTPS, mail, or telephone URL";
+  }
+
+  return undefined;
+}
+
+function validateComponentNodes(
+  content: ComponentNode[],
+  enforcePageRoot: boolean,
+): ValidationIssue[] {
   const issues: ValidationIssue[] = [];
   const seenIds = new Set<string>();
 
@@ -52,6 +86,26 @@ export function validatePageDocument(input: unknown): ValidationIssue[] {
           nodeId: node.id,
           message: `${definition.label}.${propertyName} is required.`,
         });
+        continue;
+      }
+
+      if (value !== undefined) {
+        const issue = propertyIssue(property, value);
+        if (issue) {
+          issues.push({
+            nodeId: node.id,
+            message: `${definition.label}.${propertyName} ${issue}.`,
+          });
+        }
+      }
+    }
+
+    for (const propertyName of Object.keys(node.props)) {
+      if (!(propertyName in definition.properties)) {
+        issues.push({
+          nodeId: node.id,
+          message: `${definition.label}.${propertyName} is not an approved property.`,
+        });
       }
     }
 
@@ -66,8 +120,8 @@ export function validatePageDocument(input: unknown): ValidationIssue[] {
     children.forEach((child) => visit(child, node));
   };
 
-  parsed.data.content.forEach((node) => {
-    if (!rootAllowedChildren.includes(node.type)) {
+  content.forEach((node) => {
+    if (enforcePageRoot && !rootAllowedChildren.includes(node.type)) {
       issues.push({
         nodeId: node.id,
         message: `${node.type} is not allowed at the page root.`,
@@ -75,7 +129,32 @@ export function validatePageDocument(input: unknown): ValidationIssue[] {
     }
     visit(node);
   });
+
   return issues;
+}
+
+export function validateComponentSubtree(input: unknown): ValidationIssue[] {
+  const parsed = componentNodeSchema.safeParse(input);
+
+  if (!parsed.success) {
+    return parsed.error.issues.map((issue) => ({
+      message: `${issue.path.join(".") || "component"}: ${issue.message}`,
+    }));
+  }
+
+  return validateComponentNodes([parsed.data], false);
+}
+
+export function validatePageDocument(input: unknown): ValidationIssue[] {
+  const parsed = pageDocumentSchema.safeParse(input);
+
+  if (!parsed.success) {
+    return parsed.error.issues.map((issue) => ({
+      message: `${issue.path.join(".") || "document"}: ${issue.message}`,
+    }));
+  }
+
+  return validateComponentNodes(parsed.data.content, true);
 }
 
 export function assertPageDocument(input: unknown): PageDocument {

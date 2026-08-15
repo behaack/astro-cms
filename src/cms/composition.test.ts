@@ -37,6 +37,20 @@ describe("safe page composition", () => {
     expect(canContainComponent("Heading", "Text")).toBe(false);
   });
 
+  it("derives placement and defaults for a newly manifested component", () => {
+    expect(canContainComponent(null, "Callout")).toBe(false);
+    expect(canContainComponent("Section", "Callout")).toBe(true);
+    expect(canContainComponent("Stack", "Callout")).toBe(true);
+    expect(createComponentNode("Callout", () => "callout-new")).toEqual({
+      id: "callout-new",
+      type: "Callout",
+      props: {
+        text: "Highlight an important piece of information.",
+        tone: "note",
+      },
+    });
+  });
+
   it("creates components from registry defaults", () => {
     expect(createComponentNode("Button", () => "button-new")).toEqual({
       id: "button-new",

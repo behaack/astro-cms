@@ -1,0 +1,58 @@
+---
+interface Props {
+  text: string;
+  tone?: "note" | "tip" | "important";
+  editorId?: string;
+}
+
+const { text, tone = "note", editorId } = Astro.props;
+---
+
+<aside
+  class:list={["cms-callout", `cms-callout--${tone}`]}
+  data-astro-cms-node={editorId}
+>
+  <span class="cms-callout__label">
+    {tone === "important" ? "Important" : tone === "tip" ? "Tip" : "Note"}
+  </span>
+  <p>{text}</p>
+</aside>
+
+<style>
+  .cms-callout {
+    display: grid;
+    gap: 0.5rem;
+    padding: clamp(1rem, 2vw, 1.5rem);
+    border: 1px solid color-mix(in srgb, currentColor 18%, transparent);
+    border-left-width: 0.35rem;
+    border-radius: 0.8rem;
+  }
+
+  .cms-callout--note {
+    color: #173c30;
+    background: #edf4ef;
+  }
+
+  .cms-callout--tip {
+    color: #234e35;
+    background: #e2f7e8;
+  }
+
+  .cms-callout--important {
+    color: #6f3018;
+    background: #fff0e6;
+  }
+
+  .cms-callout__label {
+    font-size: 0.75rem;
+    font-weight: 750;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .cms-callout p {
+    margin: 0;
+    font-size: clamp(1rem, 1.4vw, 1.15rem);
+    line-height: 1.6;
+  }
+</style>

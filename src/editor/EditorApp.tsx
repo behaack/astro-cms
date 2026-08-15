@@ -129,6 +129,34 @@ export default function EditorApp({ initialDocument }: EditorAppProps) {
             <h2 id="document-tree-heading">Document tree</h2>
             <div id="cms-layer-tree" role="tree" aria-label="Page structure" />
           </section>
+          <section
+            className="template-tools"
+            aria-labelledby="template-tools-heading"
+          >
+            <h2 id="template-tools-heading">Reusable templates</h2>
+            <p className="sidebar-help">
+              Save the selected component and all of its children. Each
+              insertion becomes an independent copy.
+            </p>
+            <label htmlFor="template-name">Template name</label>
+            <div className="template-tools__save">
+              <input
+                id="template-name"
+                type="text"
+                maxLength={80}
+                placeholder="Campaign CTA"
+              />
+              <button id="save-template-button" type="button">
+                Save selected
+              </button>
+            </div>
+            <div
+              id="reusable-template-list"
+              className="template-library"
+              aria-label="Reusable templates"
+            />
+            <p id="template-status" aria-live="polite" />
+          </section>
         </aside>
 
         <section
@@ -201,6 +229,9 @@ export default function EditorApp({ initialDocument }: EditorAppProps) {
           <div className="toolbar-actions">
             <button id="save-project-button" type="button">
               Save to project
+            </button>
+            <button id="publish-project-button" type="button">
+              Publish build
             </button>
             <button id="reload-project-button" type="button">
               Reload project file

@@ -1,15 +1,19 @@
-export const componentTypeValues = [
-  "Section",
-  "Stack",
-  "Heading",
-  "Text",
-  "Image",
-  "Button",
-] as const;
+import type {
+  ComponentCategory,
+  ComponentManifestEntry,
+  PropertyValue,
+} from "./component-contract";
+import type { ManifestComponentType } from "./component-manifest";
 
-export type ComponentType = (typeof componentTypeValues)[number];
+export { componentTypeValues } from "./component-manifest";
+export type {
+  ComponentCategory,
+  PropertyControlType,
+  PropertyDefinition,
+  PropertyValue,
+} from "./component-contract";
 
-export type PropertyValue = string | number | boolean | null;
+export type ComponentType = ManifestComponentType;
 
 export interface ComponentNode {
   id: string;
@@ -26,21 +30,12 @@ export interface PageDocument {
   content: ComponentNode[];
 }
 
-export type PropertyControlType = "text" | "url" | "boolean" | "select";
-
-export interface PropertyDefinition {
-  type: PropertyControlType;
-  label: string;
-  required?: boolean;
-  defaultValue?: PropertyValue;
-  options?: ReadonlyArray<{ id: string | number; label: string }>;
-}
-
-export interface ComponentDefinition {
+export interface ComponentDefinition extends Omit<
+  ComponentManifestEntry,
+  "allowedParents"
+> {
   type: ComponentType;
-  label: string;
-  category: "Layout" | "Content" | "Action";
-  acceptsChildren: boolean;
+  category: ComponentCategory;
+  allowedParents: readonly ComponentType[];
   allowedChildren: readonly ComponentType[];
-  properties: Record<string, PropertyDefinition>;
 }

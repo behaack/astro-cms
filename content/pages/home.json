@@ -5,7 +5,7 @@
   "description": "Native Astro components rendered from a neutral component document.",
   "content": [
     {
-      "id": "hero-section",
+      "id": "a4bd8876-eca8-4349-99b9-513a354866db",
       "type": "Section",
       "props": {
         "tone": "brand",
@@ -13,7 +13,15 @@
       },
       "children": [
         {
-          "id": "hero-stack",
+          "id": "175bed80-beb3-4a73-b6da-fa7ab28e2fc2",
+          "type": "Callout",
+          "props": {
+            "text": "The registry extension works end to end.",
+            "tone": "important"
+          }
+        },
+        {
+          "id": "caff682d-0490-45bc-97b6-cfbe59819c5f",
           "type": "Stack",
           "props": {
             "gap": "medium",
@@ -21,71 +29,27 @@
           },
           "children": [
             {
-              "id": "hero-heading",
+              "id": "91c9186b-d92e-4c0c-aa05-f6b4942f413b",
               "type": "Heading",
               "props": {
-                "text": "Visual freedom without design-system drift",
+                "text": "Build campaigns without breaking the site",
                 "level": 1
               }
             },
             {
-              "id": "hero-copy",
+              "id": "292e2d1d-e506-4824-b6d7-a5c2fa179f53",
               "type": "Text",
               "props": {
                 "text": "Marketing assembles pages from trusted native Astro components while developers retain control of the responsive design."
               }
             },
             {
-              "id": "hero-button",
+              "id": "793996aa-9e73-4b4c-8f49-63917345291a",
               "type": "Button",
               "props": {
-                "label": "Open the editor scaffold",
-                "href": "/admin",
-                "appearance": "secondary"
-              }
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "id": "explanation-section",
-      "type": "Section",
-      "props": {
-        "tone": "plain",
-        "width": "wide"
-      },
-      "children": [
-        {
-          "id": "explanation-stack",
-          "type": "Stack",
-          "props": {
-            "gap": "large",
-            "align": "start"
-          },
-          "children": [
-            {
-              "id": "explanation-heading",
-              "type": "Heading",
-              "props": {
-                "text": "One document, one Astro renderer",
-                "level": 2
-              }
-            },
-            {
-              "id": "explanation-copy",
-              "type": "Text",
-              "props": {
-                "text": "The JSON document stores component identities and approved properties. It does not store generated HTML as the editing source."
-              }
-            },
-            {
-              "id": "explanation-image",
-              "type": "Image",
-              "props": {
-                "src": "/abstract-grid.svg",
-                "alt": "A structured grid representing composable page sections",
-                "aspect": "landscape"
+                "label": "Launch a campaign",
+                "href": "/campaign",
+                "appearance": "primary"
               }
             }
           ]

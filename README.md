@@ -2,13 +2,15 @@
 
 This repository starts the feasibility prototype described in [`astro-cms-project-plan.md`](./astro-cms-project-plan.md).
 
-The scaffold proves five independent foundations:
+The scaffold proves seven independent foundations:
 
 1. A neutral, validated component document can render through native `.astro` components with no public editor runtime.
 2. GrapesJS Core can manipulate that neutral component structure without becoming the canonical renderer or persistence format.
 3. Unsaved editor state can be validated, handed to Astro, and returned as server-rendered HTML through the same recursive renderer used by the public page.
 4. A page can be assembled from a blank document with enforced parent-child rules, a synchronized document tree, safe move/delete/undo behavior, and fresh identities for duplicated subtrees.
 5. The private editor shell can run as a React island while saved pages remain neutral, Git-readable JSON rendered only by native Astro components.
+6. A new native Astro component can be exposed through one declarative manifest entry, with its editor controls, placement rules, validation, type contract, and Astro rendering derived without changes to the editor runtime.
+7. A selected subtree can be saved as a reusable, Git-readable template, inserted with fresh identities, customized independently, saved durably, and turned into a verified Astro production build.
 
 ## Run it
 
@@ -31,6 +33,8 @@ pnpm test
 pnpm build
 ```
 
+The final thesis evidence and its explicit limits are recorded in [`THESIS.md`](./THESIS.md).
+
 ## Current boundary
 
 The exact-preview, direct-composition, and durable local-save bridges are now proven locally. The native Astro preview is the primary editing canvas: users can select rendered nodes, choose or drag approved components to visible insertion points, and reorder existing nodes with pointer dragging. Valid changes are posted as neutral JSON, stored temporarily in memory for rapid preview, and rendered by Astro through the existing `DocumentRenderer`.
@@ -41,4 +45,15 @@ The editor can start from an empty page, add only valid component relationships,
 
 React is used only to mount and manage the private `/admin` shell. It does not render any website component and no React replica of an Astro component exists. GrapesJS remains an editing-mechanics adapter; Astro remains the authoritative renderer.
 
-In-memory live-preview drafts still expire after 30 minutes and disappear when the server restarts. The project-file save path is intentionally local-first and assumes a writable filesystem; hosted and serverless persistence remains future work. Reusable templates, interactive Astro islands, authentication, publishing, and multi-user isolation also remain future work.
+The component registry is now manifest-driven. `Callout.astro` was added as a seventh primitive without changing the core editor: its palette entry, generated property controls, placement policy, neutral schema type, and renderer mapping all come from [`src/cms/component-manifest.ts`](./src/cms/component-manifest.ts). Native implementations are discovered statically by the matching `src/components/primitives/<Type>.astro` filename.
+
+Selected component subtrees can be saved as copy-based reusable templates. Templates are validated and atomically written to `content/templates`, and every insertion generates fresh node identities so copies can safely diverge. `Publish build` validates and saves the active page, runs the installed Astro production builder, and reports whether a deployable `dist/` artifact was created. It does not claim to deploy that artifact to a hosting provider.
+
+## Register a native Astro component
+
+1. Add `src/components/primitives/<Type>.astro`. Accept only the properties the editor should expose, plus the optional `editorId` boundary marker.
+2. Add one `<Type>` entry to `src/cms/component-manifest.ts` with its category, valid parents, properties, options, and defaults.
+
+No GrapesJS adapter, React renderer, document type list, schema enum, palette, or Astro registry file should be edited. The production build fails if a manifested primitive does not have a matching Astro file.
+
+In-memory live-preview drafts still expire after 30 minutes and disappear when the server restarts. The project-file save path is intentionally local-first and assumes a writable filesystem; hosted and serverless persistence remains future work. Linked reusable components, interactive Astro islands, authentication, deployment-provider integration, and multi-user isolation also remain future work.

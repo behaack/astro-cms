@@ -241,6 +241,36 @@ The actual Astro-rendered iframe is now the primary editing canvas rather than a
 
 Browser verification selected a native heading, inserted a component through an Astro insertion point, dragged a palette Section into the canvas, and reversed two root Sections by pointer while preserving both IDs. The remaining product risks are sustained-edit latency, inline text editing, reusable compositions, and nontechnical-user usability.
 
+### Registry Generalization Update — 2026-08-15
+
+The component-registration architecture has passed its extensibility gate:
+
+- A single pure-data manifest now defines each component's editor label, category, approved properties, defaults, root eligibility, and valid parents.
+- The neutral component type and schema enum are derived from the manifest rather than a second hand-maintained list.
+- Child-placement rules are derived from each child's declared valid parents.
+- Vite statically discovers native components by the `src/components/primitives/<Type>.astro` filename convention and fails clearly when a manifested implementation is missing.
+- `Callout.astro` was added as a seventh developer-written primitive without changing the GrapesJS editor runtime, React editor shell, document adapter, validation code, or recursive Astro renderer.
+- The editor automatically displayed Callout in the palette, generated its Message and Tone controls, restricted it to Section and Stack, preserved it in neutral JSON, and rendered it through Astro.
+- Browser verification inserted Callout through a native Astro insertion point, edited both generated properties, atomically saved it, and loaded it from the public Astro route with no editor markers or editor resources.
+- Responsive browser testing also exposed and corrected an inaccessible Properties panel at widths below 1,000 pixels.
+
+**Registry go decision:** the architecture is sufficiently general to build a shareable local-first solution. This does not justify SaaS or enterprise workflow development. The next value gate is reusable declarative compositions created from registered primitives.
+
+### Reusable Composition and Publish Update — 2026-08-15
+
+The local-first MVP thesis has passed its remaining technical gates:
+
+- A selected component subtree can be named and saved as a copy-based reusable template.
+- Template files use a validated, editor-independent JSON contract under `content/templates` and are written atomically without overwriting an existing name.
+- Inserting a template preserves structure and approved properties while assigning a fresh identity to every copied node.
+- Browser testing saved the Hero section as `Campaign Hero`, started a blank page, inserted it, customized its Heading and Button, saved it, and cold-reloaded both the page and template from disk.
+- Validation now rejects unknown properties, wrong value types, unapproved select values, unsafe URL protocols, invalid nesting, duplicate IDs, and invalid root placement.
+- A browser attempt to save `javascript:alert(1)` as a Button destination stopped preview and was rejected by the save endpoint.
+- `Publish build` validates and saves the current page, runs the installed Astro production builder, and reports whether `dist/` was created successfully.
+- The generated standalone production server rendered the customized page with no editor markers, direct-editing controls, development toolbar, React editor shell, or GrapesJS resources.
+
+**Thesis verdict:** pass for a local-first, single-project solution. Copy-based templates satisfy the MVP reuse requirement. Linked reusable definitions, second-project packaging, real-user usability observation, hosting integration, authentication, and editorial workflow remain separate adoption and product gates.
+
 ---
 
 ## 7. Core Architecture
@@ -729,10 +759,11 @@ Before building the surrounding CMS, create the smallest possible proof:
 - `Text.astro`
 - `Image.astro`
 - `Button.astro`
+- `Callout.astro` (registry-generalization proof)
 
 ### Required Demonstration
 
-1. Register the six components.
+1. Register the original six components and add a seventh without changing core editor code.
 2. Display them as approved blocks in GrapesJS Core.
 3. Assemble a page by dragging components into allowed slots.
 4. Edit a heading and button through generated property controls.
@@ -742,6 +773,8 @@ Before building the surrounding CMS, create the smallest possible proof:
 8. Reload that document without losing identity or structure.
 9. Save a selected subtree as a reusable template.
 10. Insert the template into a second page.
+
+Items 1–8 and the seventh-component generalization proof are complete. Items 9–10 are the Phase 2 reusable-composition gate.
 
 ### Success Criteria
 
@@ -777,23 +810,21 @@ Failing the GrapesJS spike does not invalidate the Astro-CMS architecture. It me
 - Prove native Astro preview.
 - Record the GrapesJS go decision and its tested boundary.
 
-### Phase 1 — Local Vertical Slice
+### Phase 1 — Local Vertical Slice (Technically Complete)
 
-- Build the generated Astro registry.
+- **Implemented:** manifest-driven Astro registry with missing-file failure and seventh-component proof.
 - **Implemented:** page read/write and validation for the `/` route.
 - **Implemented:** constrained component library panel.
 - **Implemented:** property editing.
 - **Implemented:** exact responsive preview.
 - **Implemented:** direct selection, insertion, and pointer reordering in the Astro-rendered canvas.
 - **Implemented:** atomic local save and server-backed reload.
-- Complete the generated Astro registry beyond the six-component prototype.
 
 ### Phase 2 — Reusable Compositions
 
-- Save selected subtrees as templates.
-- Add linked reusable definitions.
-- Add exposed composite properties.
-- Add cycle prevention, usage reporting, and migrations.
+- **Implemented:** save selected subtrees as validated, atomic, copy-based templates.
+- **Implemented:** insert independent copies with fresh identities and normal generated property controls.
+- **Deferred beyond the MVP thesis:** linked reusable definitions, explicit composite-property aliases, cycle prevention, usage reporting, and migrations.
 
 ### Phase 3 — Structured Content and Media
 
@@ -804,6 +835,7 @@ Failing the GrapesJS spike does not invalidate the Astro-CMS architecture. It me
 
 ### Phase 4 — Git Publishing
 
+- **Implemented foundation:** validate, save, and create a local Astro production build from the editor.
 - Add deterministic serialization and change previews.
 - Add GitHub App integration.
 - Add simple publish mode.

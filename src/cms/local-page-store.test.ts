@@ -5,6 +5,7 @@ import path from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 
 import homeDocumentJson from "../../content/pages/home.json";
+import { requireNodeByType } from "./document-test-helpers";
 import {
   readLocalPageDocument,
   writeLocalPageDocument,
@@ -32,7 +33,7 @@ describe("local page store", () => {
   it("round-trips a validated document through the project-file format", async () => {
     const contentDirectory = await createTemporaryContentDirectory();
     const changedDocument = structuredClone(originalDocument);
-    changedDocument.content[0].children![0].children![0].props.text =
+    requireNodeByType(changedDocument, "Heading").props.text =
       "Saved through the local page store";
 
     await writeLocalPageDocument(changedDocument, { contentDirectory });

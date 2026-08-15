@@ -5,7 +5,11 @@ import type {
   PropertyValue,
 } from "./document-types";
 
-export const rootAllowedChildren: readonly ComponentType[] = ["Section"];
+export const rootAllowedChildren: readonly ComponentType[] = Object.values(
+  componentDefinitions,
+)
+  .filter((definition) => definition.allowedAtRoot)
+  .map((definition) => definition.type);
 
 export function canContainComponent(
   parentType: ComponentType | null,

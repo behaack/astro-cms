@@ -1,0 +1,57 @@
+{
+  "schemaVersion": 1,
+  "id": "campaign-hero",
+  "name": "Campaign Hero",
+  "root": {
+    "id": "hero-section",
+    "type": "Section",
+    "props": {
+      "tone": "brand",
+      "width": "wide"
+    },
+    "children": [
+      {
+        "id": "666ee350-3fdf-457f-9ef5-c2383ef29788",
+        "type": "Callout",
+        "props": {
+          "text": "The registry extension works end to end.",
+          "tone": "important"
+        }
+      },
+      {
+        "id": "hero-stack",
+        "type": "Stack",
+        "props": {
+          "gap": "medium",
+          "align": "start"
+        },
+        "children": [
+          {
+            "id": "hero-heading",
+            "type": "Heading",
+            "props": {
+              "text": "Visual freedom without design-system drift",
+              "level": 1
+            }
+          },
+          {
+            "id": "hero-copy",
+            "type": "Text",
+            "props": {
+              "text": "Marketing assembles pages from trusted native Astro components while developers retain control of the responsive design."
+            }
+          },
+          {
+            "id": "hero-button",
+            "type": "Button",
+            "props": {
+              "label": "Open the editor scaffold",
+              "href": "/admin",
+              "appearance": "secondary"
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
