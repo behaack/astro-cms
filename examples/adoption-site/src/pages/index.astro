@@ -1,0 +1,16 @@
+---
+import DocumentRenderer from "@astro-cms/core/renderer";
+import { readLocalPageDocument } from "@astro-cms/core/store";
+
+import SiteLayout from "../layouts/SiteLayout.astro";
+
+const homeDocument = await readLocalPageDocument("/");
+---
+
+<SiteLayout title={homeDocument.title} description={homeDocument.description}>
+  <header class="site-header">
+    <strong>Independent adoption fixture</strong>
+    {import.meta.env.DEV && <a href="/admin">Edit this page</a>}
+  </header>
+  <DocumentRenderer document={homeDocument} />
+</SiteLayout>

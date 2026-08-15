@@ -1,0 +1,58 @@
+---
+import PreviewLayout from "astro-cms:preview-layout";
+
+import { getLivePreviewDraft } from "../cms/live-preview-store";
+import DocumentRenderer from "../components/renderer/DocumentRenderer.astro";
+
+export const prerender = false;
+
+const draftId = Astro.params.draftId;
+const draft = draftId ? getLivePreviewDraft(draftId) : undefined;
+
+Astro.response.headers.set("cache-control", "no-store");
+if (!draft) Astro.response.status = 404;
+---
+
+{
+  draft ? (
+    <PreviewLayout
+      title={`Live preview · ${draft.document.title}`}
+      description={draft.document.description}
+    >
+      <div
+        data-astro-live-preview="server"
+        data-preview-draft={draft.id}
+        data-preview-revision={draft.revision}
+      >
+        <DocumentRenderer document={draft.document} editorMode />
+      </div>
+    </PreviewLayout>
+  ) : (
+    <PreviewLayout title="Preview expired · Astro-CMS">
+      <main class="astro-cms-expired-preview">
+        <h1>Preview unavailable</h1>
+        <p>This temporary preview has expired. Refresh it from the editor.</p>
+      </main>
+    </PreviewLayout>
+  )
+}
+
+<style is:global>
+  [data-astro-cms-node] {
+    position: relative;
+    outline: 1px dashed rgb(22 114 83 / 28%);
+    outline-offset: -2px;
+  }
+
+  [data-astro-cms-node][data-astro-cms-selected] {
+    z-index: 1;
+    outline: 3px solid #d57928;
+    outline-offset: -3px;
+  }
+
+  .astro-cms-expired-preview {
+    max-width: 48rem;
+    margin: 10vh auto;
+    padding: 2rem;
+  }
+</style>

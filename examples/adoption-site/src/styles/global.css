@@ -1,0 +1,33 @@
+:root {
+  font-family: Georgia, "Times New Roman", serif;
+  color: #201d1a;
+  background: #f4efe6;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+}
+
+.site-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: center;
+  padding: 1rem clamp(1rem, 5vw, 4rem);
+  border-bottom: 1px solid #c9bca8;
+  background: #fffaf1;
+}
+
+.site-header strong {
+  color: #75401d;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.site-header a {
+  color: inherit;
+}

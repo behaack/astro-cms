@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { componentDefinitions } from "./component-definitions";
-import { componentManifest, componentTypeValues } from "./component-manifest";
+import { componentManifest, componentTypeValues } from "astro-cms:manifest";
 
 describe("component manifest", () => {
   it("derives every editor definition from the single manifest", () => {

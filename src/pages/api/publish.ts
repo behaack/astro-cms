@@ -56,7 +56,8 @@ export const POST: APIRoute = async ({ request }) => {
     return Response.json({
       ok: true,
       document: result.document,
-      message: "Publishable Astro production build created in dist/.",
+      message:
+        "Production build ready. Deployment is not connected in this pilot.",
     });
   } catch (error) {
     const message =

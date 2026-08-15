@@ -1,0 +1,49 @@
+{
+  "schemaVersion": 1,
+  "id": "adoption-hero",
+  "name": "Adoption Hero",
+  "root": {
+    "id": "adoption-hero",
+    "type": "Band",
+    "props": {
+      "tone": "ink",
+      "width": "standard"
+    },
+    "children": [
+      {
+        "id": "adoption-group",
+        "type": "Group",
+        "props": {
+          "gap": "roomy",
+          "align": "start"
+        },
+        "children": [
+          {
+            "id": "adoption-title",
+            "type": "Title",
+            "props": {
+              "text": "A different Astro site, the same editing contract",
+              "level": 1
+            }
+          },
+          {
+            "id": "adoption-copy",
+            "type": "Copy",
+            "props": {
+              "text": "These components, styles, and content belong to the adopting project—not to the CMS package."
+            }
+          },
+          {
+            "id": "adoption-action",
+            "type": "LinkButton",
+            "props": {
+              "label": "Open the adopted editor",
+              "href": "/admin",
+              "appearance": "outline"
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

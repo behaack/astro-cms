@@ -538,7 +538,7 @@ async function renderLivePreview(documentValue: PageDocument): Promise<void> {
   }
 
   const requestNumber = ++livePreviewRequest;
-  setLivePreviewStatus("Sending the neutral document to Astro…", "pending");
+  setLivePreviewStatus("Updating the page preview…", "pending");
 
   try {
     const response = await fetch("/api/preview-drafts", {
@@ -584,7 +584,7 @@ async function renderLivePreview(documentValue: PageDocument): Promise<void> {
   } catch (error) {
     if (requestNumber !== livePreviewRequest) return;
     const message = error instanceof Error ? error.message : "Unknown error";
-    setLivePreviewStatus(`Astro preview failed: ${message}`, "error");
+    setLivePreviewStatus(`Page preview failed: ${message}`, "error");
   }
 }
 
@@ -606,7 +606,7 @@ function refreshDocumentOutput(): void {
   if (validation) {
     validation.textContent =
       issues.length === 0
-        ? "Document is valid."
+        ? "Page is ready."
         : issues.map((issue) => issue.message).join(" ");
     validation.dataset.state = issues.length === 0 ? "valid" : "invalid";
   }
@@ -795,10 +795,7 @@ function moveComponentToInsertion(
 
   lastDeletedCmsId = undefined;
   selectComponent(source);
-  setCompositionStatus(
-    `${componentTreeLabel(source)} moved directly in the Astro page. Its identity was preserved.`,
-    "success",
-  );
+  setCompositionStatus(`${componentTreeLabel(source)} moved.`, "success");
   refreshDocumentOutput();
 }
 
@@ -1126,7 +1123,7 @@ function installDirectPreviewEditing(previewDocument: Document): void {
         const component = findComponentByCmsId(pointerDrag.sourceId);
         if (component) {
           setCompositionStatus(
-            `Dragging ${componentTreeLabel(component)} in the Astro page…`,
+            `Dragging ${componentTreeLabel(component)} in the page preview…`,
           );
         }
       }
@@ -1386,7 +1383,7 @@ livePreviewFrame?.addEventListener("load", () => {
 
   if (!marker || !previewDocument) {
     setLivePreviewStatus(
-      "The preview loaded, but the Astro server-render marker is missing.",
+      "The preview loaded, but its editing controls are unavailable. Refresh the preview and try again.",
       "error",
     );
     return;
@@ -1413,11 +1410,7 @@ livePreviewFrame?.addEventListener("load", () => {
 
   installDirectPreviewEditing(previewDocument);
   syncLivePreviewSelection();
-  const revision = marker.dataset.previewRevision ?? "unknown";
-  setLivePreviewStatus(
-    `Astro-rendered revision ${revision}. Direct controls are an editor-only overlay.`,
-    "ready",
-  );
+  setLivePreviewStatus("Preview updated.", "ready");
 });
 
 document
@@ -1453,7 +1446,7 @@ paletteButtons.forEach((button) => {
   button.addEventListener("click", () => {
     selectPaletteType(type);
     setCompositionStatus(
-      `${type} selected. Choose a visible insertion point in the Astro page or use Add.`,
+      `${type} selected. Choose a visible insertion point in the page preview or use Add.`,
     );
   });
   button.addEventListener("dragstart", (event) => {
@@ -1464,7 +1457,7 @@ paletteButtons.forEach((button) => {
       event.dataTransfer.setData(PALETTE_DRAG_MIME, type);
       event.dataTransfer.setData("text/plain", type);
     }
-    setCompositionStatus(`Dragging ${type} into the Astro page…`);
+    setCompositionStatus(`Dragging ${type} into the page preview…`);
     updateDirectInsertionZones();
   });
   button.addEventListener("dragend", clearDirectPreviewDrag);
@@ -1494,25 +1487,42 @@ document.querySelector("#redo-button")?.addEventListener("click", () => {
 });
 
 document.querySelector("#blank-button")?.addEventListener("click", () => {
+  if (
+    !window.confirm(
+      "Start a new page? Unsaved changes in the editor will be discarded.",
+    )
+  ) {
+    return;
+  }
   wrapper.components([]);
   lastDeletedCmsId = undefined;
   selectComponent(wrapper);
+  const rootLabel = Object.values(componentDefinitions).find(
+    (definition) => definition.allowedAtRoot,
+  )?.label;
   setCompositionStatus(
-    "Blank page started. Add a Section to begin.",
+    `New page started.${rootLabel ? ` Add a ${rootLabel} to begin.` : ""}`,
     "success",
   );
   refreshDocumentOutput();
 });
 
 document.querySelector("#reset-button")?.addEventListener("click", () => {
+  if (
+    !window.confirm(
+      "Restore the version from when this editor opened? Unsaved changes will be discarded.",
+    )
+  ) {
+    return;
+  }
   lastDeletedCmsId = undefined;
   replaceEditorContent(initialDocument.content);
-  setCompositionStatus("Sample page restored.", "success");
+  setCompositionStatus("Opening version restored.", "success");
 });
 
 saveProjectButton?.addEventListener("click", async () => {
   saveProjectButton.disabled = true;
-  setSaveStatus("Saving the neutral document to the project…", "pending");
+  setSaveStatus("Saving changes…", "pending");
 
   try {
     const response = await fetch("/api/page-document", {
@@ -1527,7 +1537,7 @@ saveProjectButton?.addEventListener("click", async () => {
       );
     }
 
-    setSaveStatus("Saved atomically to content/pages/home.json.", "success");
+    setSaveStatus("Changes saved.", "success");
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown error";
     setSaveStatus(`Save failed: ${message}`, "error");
@@ -1537,8 +1547,15 @@ saveProjectButton?.addEventListener("click", async () => {
 });
 
 reloadProjectButton?.addEventListener("click", async () => {
+  if (
+    !window.confirm(
+      "Reload the saved version? Unsaved changes in the editor will be discarded.",
+    )
+  ) {
+    return;
+  }
   reloadProjectButton.disabled = true;
-  setSaveStatus("Reloading content/pages/home.json…", "pending");
+  setSaveStatus("Loading the saved version…", "pending");
 
   try {
     const response = await fetch("/api/page-document", { cache: "no-store" });
@@ -1552,8 +1569,8 @@ reloadProjectButton?.addEventListener("click", async () => {
     const storedDocument = assertPageDocument(result.document);
     lastDeletedCmsId = undefined;
     replaceEditorContent(storedDocument.content);
-    setCompositionStatus("Project page reloaded.", "success");
-    setSaveStatus("Reloaded from content/pages/home.json.", "success");
+    setCompositionStatus("Saved page reloaded.", "success");
+    setSaveStatus("Saved version loaded.", "success");
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown error";
     setSaveStatus(`Reload failed: ${message}`, "error");
@@ -1565,10 +1582,7 @@ reloadProjectButton?.addEventListener("click", async () => {
 publishProjectButton?.addEventListener("click", async () => {
   publishProjectButton.disabled = true;
   if (saveProjectButton) saveProjectButton.disabled = true;
-  setSaveStatus(
-    "Validating, saving, and creating the Astro production build…",
-    "pending",
-  );
+  setSaveStatus("Checking the page and building it for publishing…", "pending");
 
   try {
     const response = await fetch("/api/publish", {
@@ -1584,7 +1598,8 @@ publishProjectButton?.addEventListener("click", async () => {
     }
 
     setSaveStatus(
-      result.message ?? "Publishable Astro production build created in dist/.",
+      result.message ??
+        "Production build ready. Deployment is not connected in this pilot.",
       "success",
     );
   } catch (error) {

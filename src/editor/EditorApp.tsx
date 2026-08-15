@@ -25,41 +25,51 @@ export default function EditorApp({ initialDocument }: EditorAppProps) {
     <main className="editor-shell">
       <header className="editor-toolbar">
         <div>
-          <p className="eyebrow">Astro-CMS feasibility prototype</p>
-          <h1>Constrained component editor</h1>
+          <p className="eyebrow">Astro-CMS page editor</p>
+          <h1>{initialDocument.title}</h1>
         </div>
         <div className="toolbar-actions">
-          <button id="blank-button" type="button">
-            Start blank
+          <button id="save-project-button" type="button" data-primary="">
+            Save changes
           </button>
+          <button id="publish-project-button" type="button">
+            Build for publishing
+          </button>
+          <span className="toolbar-divider" aria-hidden="true" />
           <button id="undo-button" type="button">
             Undo
           </button>
           <button id="redo-button" type="button">
             Redo
           </button>
+          <button id="blank-button" type="button">
+            Start new page
+          </button>
           <button id="reset-button" type="button">
-            Reset
+            Restore opening version
+          </button>
+          <button id="reload-project-button" type="button">
+            Reload saved version
           </button>
           <a href="/preview" target="_blank" rel="noreferrer">
-            Project-file preview
+            Open saved page
           </a>
         </div>
       </header>
+      <p id="save-status" className="save-status" aria-live="polite" />
 
       <section className="milestone-note">
-        <strong>Direct Astro editing:</strong> choose or drag an approved
-        component, place it at a visible insertion point in the real preview,
-        and drag existing components there to reorder them. The preview is the
-        same native Astro component tree used by the published page.
+        <strong>Edit safely:</strong> select something in the preview to change
+        its settings. Add approved content from the left or drag it to a visible
+        insertion point. The site's responsive design remains locked.
       </section>
 
       <div className="editor-workspace">
         <aside className="editor-sidebar" aria-label="Available components">
           <h2>Components</h2>
           <p className="sidebar-help">
-            Choose a component, then click a matching insertion line in the
-            Astro canvas—or drag it there.
+            Choose a component, then click a matching insertion line in the page
+            preview—or drag it there.
           </p>
           <div className="component-library">
             {componentCategories.map((category) => (
@@ -87,8 +97,8 @@ export default function EditorApp({ initialDocument }: EditorAppProps) {
             className="composition-tools"
             aria-labelledby="composition-heading"
           >
-            <h2 id="composition-heading">Compose</h2>
-            <label htmlFor="add-component-type">Component type</label>
+            <h2 id="composition-heading">Add content</h2>
+            <label htmlFor="add-component-type">Choose a component</label>
             <div className="composition-tools__add">
               <select id="add-component-type">
                 {Object.values(componentDefinitions).map((definition) => (
@@ -126,7 +136,7 @@ export default function EditorApp({ initialDocument }: EditorAppProps) {
             className="document-tree-panel"
             aria-labelledby="document-tree-heading"
           >
-            <h2 id="document-tree-heading">Document tree</h2>
+            <h2 id="document-tree-heading">Page structure</h2>
             <div id="cms-layer-tree" role="tree" aria-label="Page structure" />
           </section>
           <section
@@ -135,8 +145,8 @@ export default function EditorApp({ initialDocument }: EditorAppProps) {
           >
             <h2 id="template-tools-heading">Reusable templates</h2>
             <p className="sidebar-help">
-              Save the selected component and all of its children. Each
-              insertion becomes an independent copy.
+              Save the selected section and its contents for reuse. Each new
+              insertion can be edited independently.
             </p>
             <label htmlFor="template-name">Template name</label>
             <div className="template-tools__save">
@@ -165,10 +175,10 @@ export default function EditorApp({ initialDocument }: EditorAppProps) {
         >
           <div className="live-preview-panel__header">
             <div>
-              <p className="eyebrow">Primary editing canvas</p>
-              <h2 id="live-preview-heading">Live Astro page</h2>
+              <p className="eyebrow">Editing canvas</p>
+              <h2 id="live-preview-heading">Page preview</h2>
               <p id="live-preview-status" aria-live="polite">
-                Preparing the first Astro render…
+                Loading the page preview…
               </p>
             </div>
             <div className="preview-actions">
@@ -195,22 +205,19 @@ export default function EditorApp({ initialDocument }: EditorAppProps) {
             id="live-preview-frame-shell"
             className="live-preview-frame-shell"
           >
-            <iframe
-              id="live-preview-frame"
-              title="Directly editable Astro page"
-            />
+            <iframe id="live-preview-frame" title="Editable page preview" />
           </div>
         </section>
 
         <aside
           className="editor-sidebar editor-sidebar--right"
-          aria-label="Properties"
+          aria-label="Settings"
         >
-          <h2>Properties</h2>
+          <h2>Settings</h2>
           <div id="cms-properties" />
           <div className="validation-card">
-            <h2>Validation</h2>
-            <p id="cms-validation">Checking document…</p>
+            <h2>Page check</h2>
+            <p id="cms-validation">Checking page…</p>
           </div>
         </aside>
       </div>
@@ -220,29 +227,20 @@ export default function EditorApp({ initialDocument }: EditorAppProps) {
         <div id="cms-canvas" />
       </div>
 
-      <section className="document-panel">
-        <div className="document-panel__header">
+      <details className="document-panel">
+        <summary>Developer page data</summary>
+        <div className="document-panel__body">
           <div>
-            <p className="eyebrow">Canonical output</p>
-            <h2>Neutral Astro-CMS document</h2>
+            <p>
+              This validated document is the portable content saved by the
+              editor. Marketing users do not need it for normal editing.
+            </p>
           </div>
-          <div className="toolbar-actions">
-            <button id="save-project-button" type="button">
-              Save to project
-            </button>
-            <button id="publish-project-button" type="button">
-              Publish build
-            </button>
-            <button id="reload-project-button" type="button">
-              Reload project file
-            </button>
-          </div>
+          <pre>
+            <code id="cms-document-output" />
+          </pre>
         </div>
-        <p id="save-status" aria-live="polite" />
-        <pre>
-          <code id="cms-document-output" />
-        </pre>
-      </section>
+      </details>
 
       <script
         id="initial-document"

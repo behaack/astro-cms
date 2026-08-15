@@ -1,5 +1,5 @@
 import type { ComponentManifestEntry } from "./component-contract";
-import { componentManifest, componentTypeValues } from "./component-manifest";
+import { componentManifest, componentTypeValues } from "astro-cms:manifest";
 import type { ComponentDefinition, ComponentType } from "./document-types";
 
 const componentTypeSet = new Set<string>(componentTypeValues);

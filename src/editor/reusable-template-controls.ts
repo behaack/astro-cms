@@ -152,10 +152,7 @@ export function createReusableTemplateControls(
       );
       options.nameInput.value = "";
       render();
-      setStatus(
-        `${result.template.name} saved to content/templates/${result.template.id}.json.`,
-        "success",
-      );
+      setStatus(`${result.template.name} saved for reuse.`, "success");
     } catch (error) {
       const message = error instanceof Error ? error.message : "Unknown error";
       setStatus(message, "error");

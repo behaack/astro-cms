@@ -7,6 +7,58 @@ settings:
 importers:
   .:
     dependencies:
+      astro:
+        specifier: ^7.2.2
+        version: 7.2.2(@emnapi/core@1.11.1)(@emnapi/runtime@1.11.3)(@types/node@26.2.0)(yaml@2.9.0)
+      grapesjs:
+        specifier: ^0.23.5
+        version: 0.23.5
+      react:
+        specifier: ^19.2.8
+        version: 19.2.8
+      react-dom:
+        specifier: ^19.2.8
+        version: 19.2.8(react@19.2.8)
+      zod:
+        specifier: ^4.4.3
+        version: 4.4.3
+    devDependencies:
+      "@astrojs/check":
+        specifier: ^0.9.10
+        version: 0.9.10(prettier-plugin-astro@0.14.1)(prettier@3.9.6)(typescript@6.0.3)
+      "@astrojs/node":
+        specifier: ^11.1.2
+        version: 11.1.2(astro@7.2.2(@emnapi/core@1.11.1)(@emnapi/runtime@1.11.3)(@types/node@26.2.0)(yaml@2.9.0))
+      "@astrojs/react":
+        specifier: ^6.0.2
+        version: 6.0.2(@types/node@26.2.0)(@types/react-dom@19.2.4(@types/react@19.2.18))(@types/react@19.2.18)(esbuild@0.28.2)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(yaml@2.9.0)
+      "@types/node":
+        specifier: ^26.2.0
+        version: 26.2.0
+      "@types/react":
+        specifier: ^19.2.18
+        version: 19.2.18
+      "@types/react-dom":
+        specifier: ^19.2.4
+        version: 19.2.4(@types/react@19.2.18)
+      prettier:
+        specifier: ^3.9.6
+        version: 3.9.6
+      prettier-plugin-astro:
+        specifier: ^0.14.1
+        version: 0.14.1
+      typescript:
+        specifier: ^6.0.0
+        version: 6.0.3
+      vitest:
+        specifier: ^4.1.10
+        version: 4.1.10(@types/node@26.2.0)(vite@8.2.1(@types/node@26.2.0)(esbuild@0.28.2)(yaml@2.9.0))
+
+  examples/adoption-site:
+    dependencies:
+      "@astro-cms/core":
+        specifier: workspace:*
+        version: link:../..
       "@astrojs/node":
         specifier: ^11.1.2
         version: 11.1.2(astro@7.2.2(@emnapi/core@1.11.1)(@emnapi/runtime@1.11.3)(@types/node@26.2.0)(yaml@2.9.0))
@@ -41,18 +93,9 @@ importers:
       "@types/react-dom":
         specifier: ^19.2.4
         version: 19.2.4(@types/react@19.2.18)
-      prettier:
-        specifier: ^3.9.6
-        version: 3.9.6
-      prettier-plugin-astro:
-        specifier: ^0.14.1
-        version: 0.14.1
       typescript:
         specifier: ^6.0.0
         version: 6.0.3
-      vitest:
-        specifier: ^4.1.10
-        version: 4.1.10(@types/node@26.2.0)(vite@8.2.1(@types/node@26.2.0)(esbuild@0.28.2)(yaml@2.9.0))
 
 packages:
   "@astrojs/check@0.9.10":

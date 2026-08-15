@@ -1,0 +1,23 @@
+---
+interface Props {
+  text: string;
+  level?: 1 | 2 | 3;
+  editorId?: string;
+}
+
+const { text, level = 2, editorId } = Astro.props;
+const Tag = `h${level}` as "h1" | "h2" | "h3";
+---
+
+<Tag class="title" data-astro-cms-node={editorId}>{text}</Tag>
+
+<style>
+  .title {
+    max-width: 18ch;
+    margin: 0;
+    font-size: clamp(2.5rem, 7vw, 6.5rem);
+    font-weight: 500;
+    line-height: 0.95;
+    letter-spacing: -0.045em;
+  }
+</style>

@@ -26,6 +26,12 @@ export interface LocalPublishOptions extends LocalPageStoreOptions {
 
 export class AstroBuildError extends Error {}
 
+export function productionBuildEnvironment(
+  environment: NodeJS.ProcessEnv = process.env,
+): NodeJS.ProcessEnv {
+  return { ...environment, NODE_ENV: "production", NO_COLOR: "1" };
+}
+
 export async function buildAstroProject(
   projectDirectory = process.cwd(),
 ): Promise<LocalBuildResult> {
@@ -40,7 +46,7 @@ export async function buildAstroProject(
   return new Promise((resolve, reject) => {
     const child = spawn(process.execPath, [astroCli, "build"], {
       cwd: projectDirectory,
-      env: { ...process.env, NO_COLOR: "1" },
+      env: productionBuildEnvironment(),
       shell: false,
       windowsHide: true,
     });

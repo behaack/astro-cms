@@ -3,9 +3,9 @@ import type {
   ComponentManifestEntry,
   PropertyValue,
 } from "./component-contract";
-import type { ManifestComponentType } from "./component-manifest";
+import type { ManifestComponentType } from "astro-cms:manifest";
 
-export { componentTypeValues } from "./component-manifest";
+export { componentTypeValues } from "astro-cms:manifest";
 export type {
   ComponentCategory,
   PropertyControlType,

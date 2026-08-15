@@ -2,7 +2,7 @@
 
 This repository starts the feasibility prototype described in [`astro-cms-project-plan.md`](./astro-cms-project-plan.md).
 
-The scaffold proves seven independent foundations:
+The scaffold proves nine independent foundations:
 
 1. A neutral, validated component document can render through native `.astro` components with no public editor runtime.
 2. GrapesJS Core can manipulate that neutral component structure without becoming the canonical renderer or persistence format.
@@ -11,6 +11,8 @@ The scaffold proves seven independent foundations:
 5. The private editor shell can run as a React island while saved pages remain neutral, Git-readable JSON rendered only by native Astro components.
 6. A new native Astro component can be exposed through one declarative manifest entry, with its editor controls, placement rules, validation, type contract, and Astro rendering derived without changes to the editor runtime.
 7. A selected subtree can be saved as a reusable, Git-readable template, inserted with fresh identities, customized independently, saved durably, and turned into a verified Astro production build.
+8. An independent Astro site can consume the system through `@astro-cms/core` while keeping its own manifest, native components, layout, styling, content, and public route.
+9. Editor and local-write routes can exist during development while remaining absent from the production build; the public page loads no editor runtime.
 
 ## Run it
 
@@ -35,6 +37,28 @@ pnpm build
 
 The final thesis evidence and its explicit limits are recorded in [`THESIS.md`](./THESIS.md).
 
+## Independent adoption proof
+
+[`examples/adoption-site`](./examples/adoption-site) is a second Astro site with a different component vocabulary and design. It consumes the workspace package without copying the editor, validation, preview, persistence, template, or publishing implementation.
+
+```bash
+pnpm --dir examples/adoption-site check
+pnpm --dir examples/adoption-site build
+pnpm --dir examples/adoption-site dev
+```
+
+Its three-path integration configuration and verified workflow are documented in [`examples/adoption-site/README.md`](./examples/adoption-site/README.md).
+
+## Package distribution proof
+
+`@astro-cms/core@0.1.0` now produces a clean package archive with explicit exports, runtime dependencies, Astro/React peer dependencies, MIT licensing, and prepack checks. `pnpm verify:package` installs that archive into an ignored, non-workspace consumer, then type-checks and builds the consumer while confirming that production excludes the editor route.
+
+The archive contract, installation example, safety boundary, and remaining release gaps are documented in [`DISTRIBUTION.md`](./DISTRIBUTION.md).
+
+## Usability gate
+
+The next decision is human rather than architectural. [`USABILITY-PILOT.md`](./USABILITY-PILOT.md) contains the moderator protocol, objective measures, and go/iterate/rethink rule. The independent fixture includes a participant-facing campaign brief and a deterministic `pnpm pilot:reset` command so each session begins from the same content.
+
 ## Current boundary
 
 The exact-preview, direct-composition, and durable local-save bridges are now proven locally. The native Astro preview is the primary editing canvas: users can select rendered nodes, choose or drag approved components to visible insertion points, and reorder existing nodes with pointer dragging. Valid changes are posted as neutral JSON, stored temporarily in memory for rapid preview, and rendered by Astro through the existing `DocumentRenderer`.
@@ -56,4 +80,4 @@ Selected component subtrees can be saved as copy-based reusable templates. Templ
 
 No GrapesJS adapter, React renderer, document type list, schema enum, palette, or Astro registry file should be edited. The production build fails if a manifested primitive does not have a matching Astro file.
 
-In-memory live-preview drafts still expire after 30 minutes and disappear when the server restarts. The project-file save path is intentionally local-first and assumes a writable filesystem; hosted and serverless persistence remains future work. Linked reusable components, interactive Astro islands, authentication, deployment-provider integration, and multi-user isolation also remain future work.
+In-memory live-preview drafts still expire after 30 minutes and disappear when the server restarts. The project-file save path is intentionally local-first and assumes a writable filesystem; hosted and serverless persistence remains future work. Linked reusable components, interactive Astro islands, authentication, deployment-provider integration, and multi-user isolation also remain future work. The package boundary is currently workspace/source based; npm packaging, versioning, installation automation, and cross-version compatibility have not been proven.

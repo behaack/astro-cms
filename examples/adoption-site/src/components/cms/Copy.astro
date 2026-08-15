@@ -1,0 +1,20 @@
+---
+interface Props {
+  text: string;
+  editorId?: string;
+}
+
+const { text, editorId } = Astro.props;
+---
+
+<p class="copy" data-astro-cms-node={editorId}>{text}</p>
+
+<style>
+  .copy {
+    max-width: 52ch;
+    margin: 0;
+    font-family: Inter, ui-sans-serif, system-ui, sans-serif;
+    font-size: clamp(1.05rem, 2vw, 1.35rem);
+    line-height: 1.65;
+  }
+</style>

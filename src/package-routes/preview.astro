@@ -1,0 +1,48 @@
+---
+import PreviewLayout from "astro-cms:preview-layout";
+
+import { readLocalPageDocument } from "../cms/local-page-store";
+import DocumentRenderer from "../components/renderer/DocumentRenderer.astro";
+
+const homeDocument = await readLocalPageDocument("/");
+---
+
+<PreviewLayout
+  title={`Preview · ${homeDocument.title}`}
+  description={homeDocument.description}
+>
+  <header class="astro-cms-preview-notice">
+    <p><strong>Astro preview.</strong> Editor boundaries are enabled.</p>
+    <nav aria-label="Editor links">
+      <a href="/">Published view</a>
+      <a href="/admin">Page editor</a>
+    </nav>
+  </header>
+  <DocumentRenderer document={homeDocument} editorMode />
+</PreviewLayout>
+
+<style is:global>
+  .astro-cms-preview-notice {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0.75rem 1rem;
+    color: #f5fff9;
+    background: #173c30;
+  }
+
+  .astro-cms-preview-notice p {
+    margin: 0;
+  }
+
+  .astro-cms-preview-notice nav {
+    display: flex;
+    gap: 1rem;
+  }
+
+  [data-astro-cms-node] {
+    position: relative;
+    outline: 1px dashed rgb(22 114 83 / 35%);
+    outline-offset: -2px;
+  }
+</style>

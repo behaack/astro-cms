@@ -1,0 +1,57 @@
+---
+interface Props {
+  tone?: "paper" | "ink" | "accent";
+  width?: "standard" | "narrow";
+  editorId?: string;
+  editorSlot?: string;
+}
+
+const {
+  tone = "paper",
+  width = "standard",
+  editorId,
+  editorSlot,
+} = Astro.props;
+---
+
+<section class:list={["band", `band--${tone}`]} data-astro-cms-node={editorId}>
+  <div
+    class:list={["band__inner", `band__inner--${width}`]}
+    data-astro-cms-slot={editorSlot}
+  >
+    <slot />
+  </div>
+</section>
+
+<style>
+  .band {
+    padding: clamp(4rem, 10vw, 9rem) clamp(1.25rem, 6vw, 6rem);
+  }
+
+  .band--paper {
+    color: #201d1a;
+    background: #f4efe6;
+  }
+
+  .band--ink {
+    color: #fff8ec;
+    background: #201d1a;
+  }
+
+  .band--accent {
+    color: #fff8ec;
+    background: #9a4f20;
+  }
+
+  .band__inner {
+    margin-inline: auto;
+  }
+
+  .band__inner--standard {
+    max-width: 72rem;
+  }
+
+  .band__inner--narrow {
+    max-width: 46rem;
+  }
+</style>

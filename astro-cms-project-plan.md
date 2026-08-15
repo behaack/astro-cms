@@ -271,6 +271,49 @@ The local-first MVP thesis has passed its remaining technical gates:
 
 **Thesis verdict:** pass for a local-first, single-project solution. Copy-based templates satisfy the MVP reuse requirement. Linked reusable definitions, second-project packaging, real-user usability observation, hosting integration, authentication, and editorial workflow remain separate adoption and product gates.
 
+### Independent Adoption Update — 2026-08-15
+
+The shareability gate has passed at the workspace-package level:
+
+- The core now exposes an Astro integration, renderer, local store, neutral types, and component contract through `@astro-cms/core`.
+- The integration aliases a project-owned manifest and preview layout, statically discovers project-owned `.astro` components, and injects the private editor and local APIs.
+- A second Astro site adopted the package with its own `Band`, `Group`, `Title`, `Copy`, and `LinkButton` components and a visually distinct layout. It copied no editor, renderer, schema, validation, preview, storage, template, or publishing implementation.
+- Browser testing loaded and edited the second site's content, inserted a reusable template, rejected an unsafe URL, saved atomically, cold-reloaded, and invoked the production builder.
+- `injectRoutes: "dev-only"` keeps the private editor, preview, and filesystem write APIs out of production builds. The independent production server returned 404 for `/admin`, while its public page retained the adopter's content and styles with no client scripts or editor markers.
+- Editor-triggered builds now force `NODE_ENV=production`, preventing development-only site UI from leaking into the artifact.
+
+**Adoption verdict:** the architecture is reusable enough to continue toward a local-first release. This proves a source/workspace package boundary, not npm distribution, automated installation, compatibility guarantees, or user demand.
+
+**Investment verdict:** do not build the complete product yet. The next decisive gate is an observed, task-based usability pilot with a nontechnical marketing user. Build only the packaging and interaction improvements needed to make that pilot credible.
+
+### Usability Pilot Preparation — 2026-08-15
+
+The first human-validation gate is ready to run but has **not** passed yet:
+
+- Primary save and publishing controls are now visible above the canvas.
+- Developer JSON is collapsed behind an explicitly labeled developer view.
+- Editor copy describes the page, preview, settings, and reusable sections in nontechnical language.
+- Destructive new-page, restore, and reload actions require confirmation.
+- Root-component guidance is derived from the adopter's manifest instead of assuming a component named `Section`.
+- The independent fixture includes a realistic participant brief and a deterministic, fixture-scoped reset command.
+- The moderator protocol records completion time, rescues, errors, confidence, and whether the participant understands that a production build is not deployment.
+- An automated regression completed the exact pilot task, saved and cold-reloaded it, created the production build, and then restored the fixture baseline. This proves readiness of the test environment, not human usability.
+
+The pilot decision requires three observed marketing-content participants under the rules in `USABILITY-PILOT.md`. Do not substitute developer testing or browser automation for those observations.
+
+### Package Distribution Update — 2026-08-15
+
+Because human usability sessions are deferred, development continued along the lowest-risk shareability path:
+
+- The core is now a versioned `@astro-cms/core@0.1.0` package with explicit exports and MIT licensing.
+- GrapesJS and Zod are runtime dependencies. Astro, the Astro React integration, React, and React DOM are peer dependencies owned by the adopting site.
+- The package archive includes only the integration, contracts, renderer, editor, stores, injected routes, APIs, documentation, and license. Internal tests, sample primitives, and the sample manifest are excluded.
+- `prepack` requires the core type check and test suite to pass.
+- `pnpm verify:package` installs the generated archive into a disposable consumer with workspace resolution disabled, removes redundant direct GrapesJS and Zod dependencies, and runs the consumer type check and production build.
+- Browser verification edited and saved a page through the installed archive. Its production server rendered the changed native Astro page with no client scripts or editor markers, and `/admin` returned 404.
+
+**Distribution verdict:** the source/workspace proof now extends to an installable package archive. Registry publishing and API stability remain deliberately unclaimed. The next low-risk engineering work is an initializer that creates the required manifest, layout, content directories, and integration configuration in an existing Astro project.
+
 ---
 
 ## 7. Core Architecture
@@ -826,6 +869,14 @@ Failing the GrapesJS spike does not invalidate the Astro-CMS architecture. It me
 - **Implemented:** insert independent copies with fresh identities and normal generated property controls.
 - **Deferred beyond the MVP thesis:** linked reusable definitions, explicit composite-property aliases, cycle prevention, usage reporting, and migrations.
 
+### Phase 2.5 — Independent Adoption (Technically Complete)
+
+- **Implemented:** workspace package exports for integration, renderer, store, types, and contract.
+- **Implemented:** adopter-owned manifest, native component discovery, preview layout, content, and public route.
+- **Implemented:** development-only editor/API route injection with production exclusion.
+- **Verified:** independent edit, template, validation, save/reload, build, and production-runtime workflow.
+- **Still open:** npm packaging, installer/CLI, semantic-version compatibility, migrations, and developer documentation beyond the tested fixture.
+
 ### Phase 3 — Structured Content and Media
 
 - Integrate Astro Content Collections.
@@ -965,7 +1016,7 @@ The project has meaningful validation when:
 5. Responsive preview matches the published Astro result.
 6. The saved content is portable, inspectable, and versionable.
 7. Removing the editor does not prevent Astro from rendering the site.
-8. Another Astro project can adopt the component and document contracts without copying project-specific code.
+8. **Proven:** another Astro project can adopt the component and document contracts without copying project-specific editor code.
 
 ---
 

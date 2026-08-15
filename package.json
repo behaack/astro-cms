@@ -1,29 +1,67 @@
 {
-  "name": "astro-cms-feasibility-prototype",
-  "private": true,
+  "name": "@astro-cms/core",
+  "version": "0.1.0",
+  "description": "Constrained visual editing for native Astro components.",
+  "license": "MIT",
   "type": "module",
+  "files": [
+    "src/astro-cms-virtual.d.ts",
+    "src/integration.ts",
+    "src/cms/*.ts",
+    "!src/cms/*.test.ts",
+    "!src/cms/component-manifest.ts",
+    "!src/cms/document-test-helpers.ts",
+    "src/components/renderer",
+    "src/editor",
+    "src/package-routes",
+    "src/pages/api",
+    "README.md",
+    "DISTRIBUTION.md",
+    "LICENSE"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/behaack/astro-crm.git"
+  },
+  "bugs": {
+    "url": "https://github.com/behaack/astro-crm/issues"
+  },
+  "homepage": "https://github.com/behaack/astro-crm#readme",
+  "exports": {
+    "./integration": "./src/integration.ts",
+    "./renderer": "./src/components/renderer/DocumentRenderer.astro",
+    "./store": "./src/cms/local-page-store.ts",
+    "./types": "./src/cms/document-types.ts",
+    "./contract": "./src/cms/component-contract.ts",
+    "./package.json": "./package.json"
+  },
   "scripts": {
     "dev": "astro dev",
     "build": "astro build",
     "preview": "astro preview",
     "check": "astro-check",
-    "test": "vitest run"
+    "test": "vitest run",
+    "prepack": "pnpm check && pnpm test",
+    "verify:package": "node scripts/verify-package.mjs"
   },
   "packageManager": "pnpm@10.24.0",
   "engines": {
     "node": ">=22.12.0"
   },
   "dependencies": {
-    "@astrojs/node": "^11.1.2",
+    "grapesjs": "^0.23.5",
+    "zod": "^4.4.3"
+  },
+  "peerDependencies": {
     "@astrojs/react": "^6.0.2",
     "astro": "^7.2.2",
-    "grapesjs": "^0.23.5",
     "react": "^19.2.8",
-    "react-dom": "^19.2.8",
-    "zod": "^4.4.3"
+    "react-dom": "^19.2.8"
   },
   "devDependencies": {
     "@astrojs/check": "^0.9.10",
+    "@astrojs/node": "^11.1.2",
+    "@astrojs/react": "^6.0.2",
     "@types/node": "^26.2.0",
     "@types/react": "^19.2.18",
     "@types/react-dom": "^19.2.4",

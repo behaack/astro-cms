@@ -5,7 +5,10 @@ import path from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import homeDocumentJson from "../../content/pages/home.json";
-import { publishLocalProject } from "./local-publisher";
+import {
+  productionBuildEnvironment,
+  publishLocalProject,
+} from "./local-publisher";
 import { assertPageDocument } from "./validation";
 
 const temporaryDirectories: string[] = [];
@@ -25,6 +28,19 @@ afterEach(async () => {
 });
 
 describe("local publishing", () => {
+  it("forces editor-triggered builds into the production environment", () => {
+    expect(
+      productionBuildEnvironment({
+        NODE_ENV: "development",
+        EXISTING_VALUE: "preserved",
+      }),
+    ).toMatchObject({
+      NODE_ENV: "production",
+      NO_COLOR: "1",
+      EXISTING_VALUE: "preserved",
+    });
+  });
+
   it("writes the validated page before producing an Astro build", async () => {
     const contentDirectory = await createTemporaryContentDirectory();
     const document = assertPageDocument(homeDocumentJson);
