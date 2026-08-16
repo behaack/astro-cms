@@ -11,8 +11,10 @@ The archive exposes:
 - `@astro-cms/core/integration`
 - `@astro-cms/core/renderer`
 - `@astro-cms/core/store`
+- `@astro-cms/core/git`
 - `@astro-cms/core/types`
 - `@astro-cms/core/contract`
+- the `astro-cms` command
 
 GrapesJS and Zod are package runtime dependencies. Astro, the Astro React
 integration, React, and React DOM are peer dependencies so an adopting site
@@ -36,6 +38,9 @@ pnpm verify:package
 7. Runs the consumer's Astro type check and production build.
 8. Confirms internal tests and the sample manifest are absent from the archive.
 9. Confirms the production build does not contain `/admin`.
+10. Installs the archive in a bare Astro project and runs `astro-cms init`.
+11. Confirms the initializer preserves the existing page and becomes a no-op on its second run.
+12. Type-checks and builds the generated project, including its route-backed native pages.
 
 Set `ASTRO_CMS_PNPM_STORE_DIR` when verification should use a specific pnpm
 store. The generated `.package-verification` directory is intentionally
@@ -49,6 +54,63 @@ In an Astro project:
 pnpm add ./astro-cms-core-0.1.0.tgz
 pnpm add astro @astrojs/react react react-dom
 ```
+
+Review and create the starter integration:
+
+```bash
+pnpm exec astro-cms init --dry-run
+pnpm exec astro-cms init
+```
+
+The initializer creates:
+
+- `src/astro-cms.manifest.ts`
+- five native components in `src/components/cms`
+- `src/layouts/AstroCmsPreviewLayout.astro`
+- the isolated `src/pages/astro-cms-demo.astro` route
+- `src/pages/astro-cms-demo/[...path].astro` for additional page documents
+- `content/pages/home.json`
+- `ASTRO-CMS.md` with project-specific next steps
+
+It also adds React and Astro-CMS to a conventional `defineConfig({...})`
+integration array. Existing integrations and pages are preserved. Running it a
+second time makes no changes. If any generated path already contains different
+content, if required direct dependencies are missing, or if the Astro config is
+computed or nonstandard, the command stops before writing. There is deliberately
+no force-overwrite option.
+
+The generated page is a safe demonstration, not a replacement for the adopting
+site's homepage. Once it accurately uses the site's components and layout, the
+developer can render its saved document from a real public route.
+
+## Review and publish through Git
+
+After the starter integration is committed once, the editor's **Review &
+publish** action:
+
+1. Reads the selected page from the current Git commit, or recognizes it as a
+   newly created page that is not tracked yet.
+2. Compares that baseline with the editor's prospective document, even when a
+   tracked draft was already saved to the working tree.
+3. Presents plain-language content changes and an optional unified file diff.
+4. Records the current file revision so a later external save cannot be
+   overwritten from a stale review.
+5. Writes deterministically ordered JSON and runs the production build.
+6. Creates a commit containing only the selected route's page document.
+
+Unrelated staged files remain staged and are not included. A staged change to
+the page itself is refused because its ownership is ambiguous. If the build or
+commit fails, the previous page source is restored. An unchanged page does not
+create an empty commit.
+
+This is deliberately a local Git boundary. Astro-CMS does not push, open a pull
+request, choose a branch, or trigger a hosting provider. Existing repository
+automation can do those jobs once the project owner chooses the desired policy.
+Git must be installed, the repository must have an initial commit, and a Git
+user name and email must be configured. A newly created page may be untracked;
+an already staged active page is refused because ownership would be ambiguous.
+
+## Configure manually
 
 Configure Astro with the project's own manifest, native component directory,
 and preview layout:
@@ -87,6 +149,21 @@ changed page, created a production build, and served the customized output. The
 public page loaded no client scripts or editor markers, and `/admin` returned
 404 in production.
 
-This proves archive distribution. It does not prove registry publishing,
-semantic-version compatibility, automated project initialization, migrations,
-or support across multiple Astro versions.
+The same archive command was browser-tested after initialization: the generated
+editor loaded its five starter components, an edited heading appeared in the
+exact Astro preview, saving persisted the change, and the generated public page
+rendered it after navigation with no console errors.
+
+The archive-installed editor was also tested through the complete Git loop. A
+saved heading change produced a semantic review, an exact page-only commit, and
+a production artifact containing the change. A second browser run created
+`/campaigns/summer`, assembled and previewed its native components, published
+commit `7934576` containing only `content/pages/campaigns/summer.json`, and
+verified `/astro-cms-demo/campaigns/summer` in the static build. The production
+build still omitted `/admin`, and the repository was clean afterward.
+
+This proves archive distribution, safe initialization, and local Git publishing
+for conventional Astro projects. It does not prove registry publishing,
+semantic-version compatibility, migrations, remote push/deployment policy,
+page rename/deletion policy, nonstandard/computed config modification, or
+support across multiple Astro versions.

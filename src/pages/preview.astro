@@ -3,12 +3,14 @@ import DocumentRenderer from "../components/renderer/DocumentRenderer.astro";
 import { readLocalPageDocument } from "../cms/local-page-store";
 import BaseLayout from "../layouts/BaseLayout.astro";
 
-const homeDocument = await readLocalPageDocument("/");
+const requestedRoute = Astro.url.searchParams.get("page") ?? "/";
+const pageDocument = await readLocalPageDocument(requestedRoute);
+const editorUrl = `/admin?page=${encodeURIComponent(pageDocument.route)}`;
 ---
 
 <BaseLayout
-  title={`Preview · ${homeDocument.title}`}
-  description={homeDocument.description}
+  title={`Preview · ${pageDocument.title}`}
+  description={pageDocument.description}
 >
   <header class="prototype-notice">
     <p>
@@ -17,10 +19,10 @@ const homeDocument = await readLocalPageDocument("/");
     </p>
     <nav aria-label="Prototype links">
       <a href="/">Published view</a>
-      <a href="/admin">Editor scaffold</a>
+      <a href={editorUrl}>Editor scaffold</a>
     </nav>
   </header>
-  <DocumentRenderer document={homeDocument} editorMode />
+  <DocumentRenderer document={pageDocument} editorMode />
 </BaseLayout>
 
 <style is:global>

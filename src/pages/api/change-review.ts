@@ -1,32 +1,16 @@
 import type { APIRoute } from "astro";
 
 import {
-  readLocalPageDocument,
-  writeLocalPageDocument,
-} from "../../cms/local-page-store";
+  GitPublishingError,
+  reviewLocalPageDocument,
+} from "../../cms/git-publisher";
 import { validatePageDocument } from "../../cms/validation";
 
 const MAX_REQUEST_BYTES = 512 * 1024;
 
 export const prerender = false;
 
-export const GET: APIRoute = async ({ request }) => {
-  try {
-    const route = new URL(request.url).searchParams.get("route") ?? "/";
-    const document = await readLocalPageDocument(route);
-    return Response.json(
-      { ok: true, document },
-      { headers: { "cache-control": "no-store" } },
-    );
-  } catch {
-    return Response.json(
-      { ok: false, message: "The project page file could not be read." },
-      { status: 500 },
-    );
-  }
-};
-
-export const PUT: APIRoute = async ({ request }) => {
+export const POST: APIRoute = async ({ request }) => {
   const contentLength = Number(request.headers.get("content-length") ?? 0);
   if (contentLength > MAX_REQUEST_BYTES) {
     return Response.json(
@@ -44,7 +28,6 @@ export const PUT: APIRoute = async ({ request }) => {
       { status: 400 },
     );
   }
-
   if (!body || typeof body !== "object" || !("document" in body)) {
     return Response.json(
       { ok: false, message: "Request must include a document." },
@@ -52,21 +35,23 @@ export const PUT: APIRoute = async ({ request }) => {
     );
   }
 
-  const issues = validatePageDocument(body.document);
+  const document = body.document;
+  const issues = validatePageDocument(document);
   if (issues.length > 0) {
     return Response.json({ ok: false, issues }, { status: 422 });
   }
 
   try {
-    const document = await writeLocalPageDocument(body.document);
+    const review = await reviewLocalPageDocument(document);
     return Response.json(
-      { ok: true, document },
+      { ok: true, review },
       { headers: { "cache-control": "no-store" } },
     );
-  } catch {
-    return Response.json(
-      { ok: false, message: "The project page file could not be saved." },
-      { status: 500 },
-    );
+  } catch (error) {
+    const message =
+      error instanceof GitPublishingError
+        ? error.message
+        : "The Git change review could not be created.";
+    return Response.json({ ok: false, message }, { status: 409 });
   }
 };

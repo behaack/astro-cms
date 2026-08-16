@@ -1,8 +1,13 @@
 ---
-import { readLocalPageDocument } from "../cms/local-page-store";
+import {
+  listLocalPageDocuments,
+  readLocalPageDocument,
+} from "../cms/local-page-store";
 import EditorApp from "../editor/EditorApp";
 
-const homeDocument = await readLocalPageDocument("/");
+const requestedRoute = Astro.url.searchParams.get("page") ?? "/";
+const pageDocument = await readLocalPageDocument(requestedRoute);
+const pages = await listLocalPageDocuments();
 ---
 
 <!doctype html>
@@ -17,7 +22,11 @@ const homeDocument = await readLocalPageDocument("/");
     <title>Page editor · Astro-CMS</title>
   </head>
   <body>
-    <EditorApp initialDocument={homeDocument} client:only="react" />
+    <EditorApp
+      initialDocument={pageDocument}
+      initialPages={pages}
+      client:only="react"
+    />
   </body>
 </html>
 

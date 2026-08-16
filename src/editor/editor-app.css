@@ -30,6 +30,32 @@
   margin-bottom: 0;
   font-size: 1.35rem;
 }
+
+.page-heading {
+  min-width: min(32rem, 45vw);
+}
+
+.page-manager {
+  display: grid;
+  grid-template-columns: auto minmax(12rem, 1fr) auto;
+  gap: 0.45rem;
+  align-items: center;
+  margin-top: 0.8rem;
+}
+
+.page-manager label {
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.page-manager select {
+  min-width: 0;
+  padding: 0.5rem 0.6rem;
+  border: 1px solid #92ab9f;
+  border-radius: 0.5rem;
+  color: #173c30;
+  background: #f4fbf7;
+}
 .editor-shell h2 {
   margin-bottom: 0.75rem;
   font-size: 1rem;
@@ -472,6 +498,170 @@
   white-space: nowrap;
 }
 
+.publish-review-dialog {
+  width: min(46rem, calc(100vw - 2rem));
+  max-height: calc(100vh - 2rem);
+  padding: 1.25rem;
+  overflow: auto;
+  border: 1px solid #92ab9f;
+  border-radius: 0.9rem;
+  color: #17201d;
+  background: #fff;
+  box-shadow: 0 1.5rem 4rem rgb(20 35 30 / 28%);
+}
+
+.create-page-dialog {
+  width: min(34rem, calc(100vw - 2rem));
+  max-height: calc(100vh - 2rem);
+  padding: 1.25rem;
+  overflow: auto;
+  border: 1px solid #92ab9f;
+  border-radius: 0.9rem;
+  color: #17201d;
+  background: #fff;
+  box-shadow: 0 1.5rem 4rem rgb(20 35 30 / 28%);
+}
+
+.create-page-dialog::backdrop {
+  background: rgb(20 35 30 / 62%);
+}
+
+.create-page-dialog label {
+  display: block;
+  margin: 0.8rem 0 0.35rem;
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.create-page-dialog input,
+.create-page-dialog textarea {
+  width: 100%;
+  padding: 0.65rem 0.7rem;
+  border: 1px solid #aebfb6;
+  border-radius: 0.45rem;
+  color: #173c30;
+  background: #fff;
+  font: inherit;
+}
+
+.page-path-input {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  border: 1px solid #aebfb6;
+  border-radius: 0.45rem;
+  background: #fff;
+}
+
+.page-path-input span {
+  padding-left: 0.7rem;
+  color: #52645c;
+}
+
+.page-path-input input {
+  border: 0;
+}
+
+#create-page-status {
+  min-height: 1.5rem;
+  margin: 0.8rem 0;
+  color: #52645c;
+}
+
+#create-page-status[data-state="error"] {
+  color: #a2392b;
+}
+
+.publish-review-dialog::backdrop {
+  background: rgb(20 35 30 / 62%);
+}
+
+.publish-review-dialog__header,
+.publish-review-dialog__actions {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.publish-review-dialog button,
+.create-page-dialog button {
+  padding: 0.65rem 0.9rem;
+  border: 1px solid #92ab9f;
+  border-radius: 0.5rem;
+  color: #173c30;
+  background: #fff;
+  cursor: pointer;
+}
+
+.publish-review-dialog button[data-primary],
+.create-page-dialog button[data-primary] {
+  border-color: #173c30;
+  color: #fff;
+  background: #173c30;
+  font-weight: 700;
+}
+
+.publish-review-dialog button:disabled,
+.create-page-dialog button:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.publish-change-list {
+  display: grid;
+  gap: 0.6rem;
+  margin: 1rem 0;
+  padding: 0;
+  list-style: none;
+}
+
+.publish-change-list li {
+  padding: 0.75rem 0.85rem;
+  border-left: 0.25rem solid #4e806d;
+  border-radius: 0.35rem;
+  background: #edf4ef;
+  line-height: 1.45;
+}
+
+.publish-technical-diff {
+  margin: 1rem 0;
+}
+
+.publish-technical-diff summary {
+  color: #315f50;
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.publish-technical-diff pre {
+  max-height: 20rem;
+  padding: 1rem;
+  overflow: auto;
+  border-radius: 0.6rem;
+  color: #dcece4;
+  background: #14231e;
+  font-size: 0.78rem;
+  white-space: pre-wrap;
+}
+
+#publish-review-status {
+  min-height: 1.5rem;
+  color: #52645c;
+}
+
+#publish-review-status[data-state="error"] {
+  color: #a2392b;
+}
+
+#publish-review-status[data-state="success"] {
+  color: #17623d;
+}
+
+.publish-review-dialog__actions {
+  justify-content: flex-end;
+}
+
 @media (max-width: 1000px) {
   .editor-workspace {
     grid-template-columns: 14rem minmax(34rem, 1fr);
@@ -506,6 +696,15 @@
 
   .editor-workspace {
     grid-template-columns: minmax(34rem, 1fr);
+  }
+
+  .page-heading {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .page-manager {
+    grid-template-columns: 1fr;
   }
 
   .editor-sidebar,

@@ -4,21 +4,23 @@ import PreviewLayout from "astro-cms:preview-layout";
 import { readLocalPageDocument } from "../cms/local-page-store";
 import DocumentRenderer from "../components/renderer/DocumentRenderer.astro";
 
-const homeDocument = await readLocalPageDocument("/");
+const requestedRoute = Astro.url.searchParams.get("page") ?? "/";
+const pageDocument = await readLocalPageDocument(requestedRoute);
+const editorUrl = `/admin?page=${encodeURIComponent(pageDocument.route)}`;
 ---
 
 <PreviewLayout
-  title={`Preview · ${homeDocument.title}`}
-  description={homeDocument.description}
+  title={`Preview · ${pageDocument.title}`}
+  description={pageDocument.description}
 >
   <header class="astro-cms-preview-notice">
     <p><strong>Astro preview.</strong> Editor boundaries are enabled.</p>
     <nav aria-label="Editor links">
       <a href="/">Published view</a>
-      <a href="/admin">Page editor</a>
+      <a href={editorUrl}>Page editor</a>
     </nav>
   </header>
-  <DocumentRenderer document={homeDocument} editorMode />
+  <DocumentRenderer document={pageDocument} editorMode />
 </PreviewLayout>
 
 <style is:global>

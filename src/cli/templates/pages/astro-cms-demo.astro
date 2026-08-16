@@ -1,0 +1,15 @@
+---
+import DocumentRenderer from "@astro-cms/core/renderer";
+import { readLocalPageDocument } from "@astro-cms/core/store";
+
+import AstroCmsPreviewLayout from "../layouts/AstroCmsPreviewLayout.astro";
+
+const document = await readLocalPageDocument("/");
+---
+
+<AstroCmsPreviewLayout
+  title={document.title}
+  description={document.description}
+>
+  <DocumentRenderer document={document} />
+</AstroCmsPreviewLayout>

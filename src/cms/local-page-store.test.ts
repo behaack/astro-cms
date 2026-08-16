@@ -1,4 +1,4 @@
-import { mkdtemp, readdir, readFile, rm } from "node:fs/promises";
+import { mkdtemp, readdir, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 
@@ -7,7 +7,13 @@ import { afterEach, describe, expect, it } from "vitest";
 import homeDocumentJson from "../../content/pages/home.json";
 import { requireNodeByType } from "./document-test-helpers";
 import {
+  createLocalPageDocument,
+  InvalidPageDetailsError,
+  listLocalPageDocuments,
+  localPageFilePath,
+  PageAlreadyExistsError,
   readLocalPageDocument,
+  serializePageDocument,
   writeLocalPageDocument,
 } from "./local-page-store";
 import { assertPageDocument } from "./validation";
@@ -54,17 +60,93 @@ describe("local page store", () => {
     expect(await readdir(contentDirectory)).toEqual(["home.json"]);
   });
 
-  it("rejects routes that are not explicitly mapped to project files", async () => {
+  it("serializes page and property keys deterministically", () => {
+    const document = structuredClone(originalDocument);
+    const heading = requireNodeByType(document, "Heading");
+    heading.props = { level: 1, text: "Stable order" };
+
+    const source = serializePageDocument(document);
+    const headingStart = source.indexOf(heading.id);
+
+    expect(source.indexOf('"level"', headingStart)).toBeLessThan(
+      source.indexOf('"text"', headingStart),
+    );
+    expect(source.endsWith("\n")).toBe(true);
+    expect(serializePageDocument(JSON.parse(source))).toBe(source);
+  });
+
+  it("creates, lists, and reads nested page routes", async () => {
     const contentDirectory = await createTemporaryContentDirectory();
-    const unsupportedDocument = {
-      ...structuredClone(originalDocument),
-      route: "/unregistered",
-    };
+    await writeLocalPageDocument(originalDocument, { contentDirectory });
+    const created = await createLocalPageDocument(
+      { route: "campaigns/summer-sale", title: "Summer sale" },
+      { contentDirectory },
+    );
+
+    expect(created.route).toBe("/campaigns/summer-sale");
+    expect(
+      localPageFilePath("/campaigns/summer-sale", { contentDirectory }),
+    ).toBe(path.join(contentDirectory, "campaigns", "summer-sale.json"));
+    expect(await listLocalPageDocuments({ contentDirectory })).toEqual([
+      {
+        route: "/",
+        title: originalDocument.title,
+        description: originalDocument.description,
+      },
+      { route: "/campaigns/summer-sale", title: "Summer sale" },
+    ]);
+    expect(
+      await readLocalPageDocument("/campaigns/summer-sale", {
+        contentDirectory,
+      }),
+    ).toEqual(created);
+  });
+
+  it("refuses unsafe routes and existing page destinations", async () => {
+    const contentDirectory = await createTemporaryContentDirectory();
+    await createLocalPageDocument(
+      { route: "/campaign", title: "Campaign" },
+      { contentDirectory },
+    );
 
     await expect(
-      writeLocalPageDocument(unsupportedDocument, { contentDirectory }),
+      createLocalPageDocument(
+        { route: "/campaign", title: "Duplicate" },
+        { contentDirectory },
+      ),
+    ).rejects.toThrow(PageAlreadyExistsError);
+    await expect(
+      createLocalPageDocument(
+        { route: "../outside", title: "Unsafe" },
+        { contentDirectory },
+      ),
     ).rejects.toThrow(
-      "No local page file is registered for route /unregistered.",
+      "Page paths must use lowercase letters, numbers, and single hyphens.",
+    );
+    await expect(
+      createLocalPageDocument(
+        { route: "/untitled", title: "   " },
+        { contentDirectory },
+      ),
+    ).rejects.toThrow(InvalidPageDetailsError);
+  });
+
+  it("refuses a document whose stored route does not match its file", async () => {
+    const contentDirectory = await createTemporaryContentDirectory();
+    const created = await createLocalPageDocument(
+      { route: "/campaigns/summer", title: "Summer" },
+      { contentDirectory },
+    );
+    await writeFile(
+      localPageFilePath(created.route, { contentDirectory }),
+      serializePageDocument({ ...created, route: "/campaigns/winter" }),
+      "utf8",
+    );
+
+    await expect(
+      readLocalPageDocument(created.route, { contentDirectory }),
+    ).rejects.toThrow(
+      "Page route /campaigns/winter does not match requested route /campaigns/summer.",
     );
   });
 });

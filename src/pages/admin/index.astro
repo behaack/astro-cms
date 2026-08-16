@@ -1,11 +1,20 @@
 ---
-import { readLocalPageDocument } from "../../cms/local-page-store";
+import {
+  listLocalPageDocuments,
+  readLocalPageDocument,
+} from "../../cms/local-page-store";
 import EditorApp from "../../editor/EditorApp";
 import BaseLayout from "../../layouts/BaseLayout.astro";
 
-const homeDocument = await readLocalPageDocument("/");
+const requestedRoute = Astro.url.searchParams.get("page") ?? "/";
+const pageDocument = await readLocalPageDocument(requestedRoute);
+const pages = await listLocalPageDocuments();
 ---
 
 <BaseLayout title="Editor Scaffold · Astro-CMS">
-  <EditorApp initialDocument={homeDocument} client:only="react" />
+  <EditorApp
+    initialDocument={pageDocument}
+    initialPages={pages}
+    client:only="react"
+  />
 </BaseLayout>

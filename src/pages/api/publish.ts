@@ -1,14 +1,16 @@
 import type { APIRoute } from "astro";
 
 import {
-  AstroBuildError,
-  publishLocalProject,
-  type LocalPublishResult,
-} from "../../cms/local-publisher";
+  GitPublishingError,
+  NoPageChangesError,
+  publishGitProject,
+  StalePageRevisionError,
+  type GitPublishResult,
+} from "../../cms/git-publisher";
 import { validatePageDocument } from "../../cms/validation";
 
 const MAX_REQUEST_BYTES = 512 * 1024;
-let activePublication: Promise<LocalPublishResult> | undefined;
+let activePublication: Promise<GitPublishResult> | undefined;
 
 export const prerender = false;
 
@@ -38,9 +40,18 @@ export const POST: APIRoute = async ({ request }) => {
     );
   }
 
-  if (!body || typeof body !== "object" || !("document" in body)) {
+  if (
+    !body ||
+    typeof body !== "object" ||
+    !("document" in body) ||
+    !("baseRevision" in body) ||
+    typeof body.baseRevision !== "string"
+  ) {
     return Response.json(
-      { ok: false, message: "Request must include a document." },
+      {
+        ok: false,
+        message: "Request must include a document and its reviewed revision.",
+      },
       { status: 400 },
     );
   }
@@ -51,20 +62,28 @@ export const POST: APIRoute = async ({ request }) => {
   }
 
   try {
-    activePublication = publishLocalProject(body.document);
+    activePublication = publishGitProject(body.document, body.baseRevision);
     const result = await activePublication;
     return Response.json({
       ok: true,
       document: result.document,
-      message:
-        "Production build ready. Deployment is not connected in this pilot.",
+      commit: result.commit,
+      shortCommit: result.shortCommit,
+      filePath: result.filePath,
+      message: `Published as Git commit ${result.shortCommit}. The production build is ready; pushing and deployment are not connected.`,
     });
   } catch (error) {
     const message =
-      error instanceof AstroBuildError
+      error instanceof GitPublishingError
         ? error.message
         : "The page could not be published.";
-    return Response.json({ ok: false, message }, { status: 500 });
+    const status =
+      error instanceof StalePageRevisionError
+        ? 409
+        : error instanceof NoPageChangesError
+          ? 422
+          : 500;
+    return Response.json({ ok: false, message }, { status });
   } finally {
     activePublication = undefined;
   }

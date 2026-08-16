@@ -1,0 +1,52 @@
+{
+  "schemaVersion": 1,
+  "route": "/",
+  "title": "Astro-CMS starter page",
+  "description": "A safe starting point for native Astro visual editing.",
+  "content": [
+    {
+      "id": "d7d0cc79-d825-499e-806b-22f1954e64f3",
+      "type": "Section",
+      "props": {
+        "tone": "accent",
+        "width": "standard"
+      },
+      "children": [
+        {
+          "id": "1a1667a0-c383-420b-ad90-c03cc2358048",
+          "type": "Stack",
+          "props": {
+            "gap": "normal",
+            "align": "start"
+          },
+          "children": [
+            {
+              "id": "3f657d5b-5931-4c2e-858c-c98688c74d25",
+              "type": "Heading",
+              "props": {
+                "text": "Native Astro pages, safely assembled",
+                "level": 1
+              }
+            },
+            {
+              "id": "5e68fd23-1f69-458e-9218-df148b4f3b9c",
+              "type": "Text",
+              "props": {
+                "text": "Replace these starter components with your own design system, then expose only the choices your content team should control."
+              }
+            },
+            {
+              "id": "7b16774a-8533-4df7-a52f-458122e4d684",
+              "type": "Button",
+              "props": {
+                "label": "Edit this page",
+                "href": "/admin",
+                "appearance": "solid"
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

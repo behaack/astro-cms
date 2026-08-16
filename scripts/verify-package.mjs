@@ -19,6 +19,10 @@ const verificationDirectory = path.join(
   ".package-verification",
 );
 const consumerDirectory = path.join(verificationDirectory, "consumer");
+const initializerDirectory = path.join(
+  verificationDirectory,
+  "initializer-consumer",
+);
 const fixtureDirectory = path.join(
   projectDirectory,
   "examples",
@@ -55,6 +59,38 @@ async function runPnpm(args, workingDirectory) {
       }
     });
   });
+}
+
+async function runGit(args, workingDirectory) {
+  await new Promise((resolve, reject) => {
+    const child = spawn("git", args, {
+      cwd: workingDirectory,
+      env: { ...process.env, NO_COLOR: "1" },
+      shell: false,
+      stdio: "inherit",
+      windowsHide: true,
+    });
+    child.on("error", reject);
+    child.on("close", (code) => {
+      if (code === 0) {
+        resolve();
+      } else {
+        reject(new Error(`git ${args.join(" ")} exited with code ${code}.`));
+      }
+    });
+  });
+}
+
+async function installDependencies(workingDirectory) {
+  const installArguments = [
+    "install",
+    "--ignore-workspace",
+    "--no-frozen-lockfile",
+  ];
+  if (process.env.ASTRO_CMS_PNPM_STORE_DIR) {
+    installArguments.push("--store-dir", process.env.ASTRO_CMS_PNPM_STORE_DIR);
+  }
+  await runPnpm(installArguments, workingDirectory);
 }
 
 async function pathExists(filePath) {
@@ -106,15 +142,7 @@ await writeFile(
   "utf8",
 );
 
-const installArguments = [
-  "install",
-  "--ignore-workspace",
-  "--no-frozen-lockfile",
-];
-if (process.env.ASTRO_CMS_PNPM_STORE_DIR) {
-  installArguments.push("--store-dir", process.env.ASTRO_CMS_PNPM_STORE_DIR);
-}
-await runPnpm(installArguments, consumerDirectory);
+await installDependencies(consumerDirectory);
 await runPnpm(["check"], consumerDirectory);
 await runPnpm(["build"], consumerDirectory);
 
@@ -135,7 +163,14 @@ for (const requiredPath of [
   "DISTRIBUTION.md",
   "LICENSE",
   "src/integration.ts",
+  "src/cli/astro-cms.mjs",
+  "src/cli/init.mjs",
+  "src/cli/templates/manifest.ts",
+  "src/cli/templates/pages/astro-cms-demo/[...path].astro",
+  "src/cms/git-publisher.ts",
   "src/components/renderer/DocumentRenderer.astro",
+  "src/pages/api/change-review.ts",
+  "src/pages/api/pages.ts",
   "src/pages/api/publish.ts",
 ]) {
   if (!(await pathExists(path.join(installedPackageDirectory, requiredPath)))) {
@@ -147,10 +182,21 @@ for (const excludedPath of [
   "src/cms/component-definitions.test.ts",
   "src/cms/component-manifest.ts",
   "src/cms/document-test-helpers.ts",
+  "src/cli/init.test.mjs",
 ]) {
   if (await pathExists(path.join(installedPackageDirectory, excludedPath))) {
     throw new Error(`Internal source leaked into the package: ${excludedPath}`);
   }
+}
+
+const installedManifest = JSON.parse(
+  await readFile(path.join(installedPackageDirectory, "package.json"), "utf8"),
+);
+if (installedManifest.bin?.["astro-cms"] !== "./src/cli/astro-cms.mjs") {
+  throw new Error("The package does not expose the astro-cms command.");
+}
+if (installedManifest.exports?.["./git"] !== "./src/cms/git-publisher.ts") {
+  throw new Error("The package does not expose the Git publishing service.");
 }
 
 const serverEntry = await readFile(
@@ -161,7 +207,132 @@ if (/['"]route['"]\s*:\s*['"]\/admin['"]/.test(serverEntry)) {
   throw new Error("The production archive consumer contains the editor route.");
 }
 
+await mkdir(path.join(initializerDirectory, "src", "pages"), {
+  recursive: true,
+});
+const initializerManifest = {
+  name: "astro-cms-initializer-consumer",
+  private: true,
+  type: "module",
+  scripts: {
+    check: "astro-check",
+    build: "astro build",
+  },
+  dependencies: {
+    "@astro-cms/core": `file:../${archiveName}`,
+    "@astrojs/react": rootManifest.peerDependencies["@astrojs/react"],
+    astro: rootManifest.peerDependencies.astro,
+    react: rootManifest.peerDependencies.react,
+    "react-dom": rootManifest.peerDependencies["react-dom"],
+  },
+  devDependencies: {
+    "@astrojs/check": rootManifest.devDependencies["@astrojs/check"],
+    "@types/node": rootManifest.devDependencies["@types/node"],
+    "@types/react": rootManifest.devDependencies["@types/react"],
+    "@types/react-dom": rootManifest.devDependencies["@types/react-dom"],
+    typescript: rootManifest.devDependencies.typescript,
+  },
+};
+await writeFile(
+  path.join(initializerDirectory, "package.json"),
+  `${JSON.stringify(initializerManifest, null, 2)}\n`,
+  "utf8",
+);
+await writeFile(
+  path.join(initializerDirectory, "astro.config.mjs"),
+  'import { defineConfig } from "astro/config";\n\nexport default defineConfig({\n  devToolbar: { enabled: false },\n});\n',
+  "utf8",
+);
+await writeFile(
+  path.join(initializerDirectory, "tsconfig.json"),
+  '{\n  "extends": "astro/tsconfigs/strict",\n  "include": [".astro/types.d.ts", "**/*"],\n  "exclude": ["dist"]\n}\n',
+  "utf8",
+);
+await writeFile(
+  path.join(initializerDirectory, ".gitignore"),
+  "node_modules/\ndist/\n.astro/\n",
+  "utf8",
+);
+const originalIndex = "<h1>This existing page belongs to the adopter.</h1>\n";
+await writeFile(
+  path.join(initializerDirectory, "src", "pages", "index.astro"),
+  originalIndex,
+  "utf8",
+);
+
+await installDependencies(initializerDirectory);
+const installedInitializerPackage = path.join(
+  initializerDirectory,
+  "node_modules",
+  "@astro-cms",
+  "core",
+);
+const initializedPackageTarget = await realpath(installedInitializerPackage);
+if (initializedPackageTarget === projectDirectory) {
+  throw new Error(
+    "Initializer consumer resolved the workspace root instead of the archive.",
+  );
+}
+
+await runPnpm(
+  ["exec", "astro-cms", "init", initializerDirectory],
+  initializerDirectory,
+);
+const initializedConfigPath = path.join(
+  initializerDirectory,
+  "astro.config.mjs",
+);
+const initializedConfig = await readFile(initializedConfigPath, "utf8");
+await runPnpm(
+  ["exec", "astro-cms", "init", initializerDirectory],
+  initializerDirectory,
+);
+if ((await readFile(initializedConfigPath, "utf8")) !== initializedConfig) {
+  throw new Error("Running the initializer twice changed the Astro config.");
+}
+if (
+  (await readFile(
+    path.join(initializerDirectory, "src", "pages", "index.astro"),
+    "utf8",
+  )) !== originalIndex
+) {
+  throw new Error("The initializer replaced the adopter's existing page.");
+}
+
+await runGit(["init"], initializerDirectory);
+await runGit(
+  ["config", "user.name", "Astro-CMS Verification"],
+  initializerDirectory,
+);
+await runGit(
+  ["config", "user.email", "astro-cms@example.invalid"],
+  initializerDirectory,
+);
+await runGit(["add", "."], initializerDirectory);
+await runGit(["commit", "-m", "initial website"], initializerDirectory);
+
+await runPnpm(["check"], initializerDirectory);
+await runPnpm(["build"], initializerDirectory);
+for (const generatedPath of [
+  "ASTRO-CMS.md",
+  "src/astro-cms.manifest.ts",
+  "src/pages/astro-cms-demo.astro",
+  "src/pages/astro-cms-demo/[...path].astro",
+  "content/pages/home.json",
+  "dist/astro-cms-demo/index.html",
+]) {
+  if (!(await pathExists(path.join(initializerDirectory, generatedPath)))) {
+    throw new Error(`Initializer output is missing: ${generatedPath}`);
+  }
+}
+if (await pathExists(path.join(initializerDirectory, "dist", "admin"))) {
+  throw new Error(
+    "The initialized production build contains the editor route.",
+  );
+}
+
 console.log(
   `Verified ${rootManifest.name}@${rootManifest.version} from archive install through production build.`,
 );
 console.log(`Consumer fixture: ${consumerDirectory}`);
+console.log(`Initializer fixture: ${initializerDirectory}`);

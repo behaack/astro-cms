@@ -3,15 +3,20 @@ import { useEffect } from "react";
 import "grapesjs/dist/css/grapes.min.css";
 import { componentDefinitions } from "../cms/component-definitions";
 import type { PageDocument } from "../cms/document-types";
+import type { LocalPageSummary } from "../cms/local-page-store";
 import "./editor-app.css";
 
 interface EditorAppProps {
   initialDocument: PageDocument;
+  initialPages: LocalPageSummary[];
 }
 
 const componentCategories = ["Layout", "Content", "Action"] as const;
 
-export default function EditorApp({ initialDocument }: EditorAppProps) {
+export default function EditorApp({
+  initialDocument,
+  initialPages,
+}: EditorAppProps) {
   const serializedDocument = JSON.stringify(initialDocument).replaceAll(
     "<",
     "\\u003c",
@@ -24,16 +29,29 @@ export default function EditorApp({ initialDocument }: EditorAppProps) {
   return (
     <main className="editor-shell">
       <header className="editor-toolbar">
-        <div>
+        <div className="page-heading">
           <p className="eyebrow">Astro-CMS page editor</p>
           <h1>{initialDocument.title}</h1>
+          <div className="page-manager">
+            <label htmlFor="page-switcher">Page</label>
+            <select id="page-switcher" defaultValue={initialDocument.route}>
+              {initialPages.map((page) => (
+                <option key={page.route} value={page.route}>
+                  {page.title} · {page.route}
+                </option>
+              ))}
+            </select>
+            <button id="open-create-page" type="button">
+              Create page
+            </button>
+          </div>
         </div>
         <div className="toolbar-actions">
           <button id="save-project-button" type="button" data-primary="">
             Save changes
           </button>
           <button id="publish-project-button" type="button">
-            Build for publishing
+            Review &amp; publish
           </button>
           <span className="toolbar-divider" aria-hidden="true" />
           <button id="undo-button" type="button">
@@ -51,7 +69,11 @@ export default function EditorApp({ initialDocument }: EditorAppProps) {
           <button id="reload-project-button" type="button">
             Reload saved version
           </button>
-          <a href="/preview" target="_blank" rel="noreferrer">
+          <a
+            href={`/preview?page=${encodeURIComponent(initialDocument.route)}`}
+            target="_blank"
+            rel="noreferrer"
+          >
             Open saved page
           </a>
         </div>
@@ -226,6 +248,71 @@ export default function EditorApp({ initialDocument }: EditorAppProps) {
         <div id="cms-blocks-engine" />
         <div id="cms-canvas" />
       </div>
+
+      <dialog id="publish-review-dialog" className="publish-review-dialog">
+        <div className="publish-review-dialog__header">
+          <div>
+            <p className="eyebrow">Git publishing</p>
+            <h2>Review this change</h2>
+          </div>
+          <button id="close-publish-review" type="button">
+            Cancel
+          </button>
+        </div>
+        <p id="publish-review-intro">
+          Confirm what will change before creating a production build and an
+          isolated Git commit.
+        </p>
+        <ul id="publish-change-list" className="publish-change-list" />
+        <details className="publish-technical-diff">
+          <summary>Technical file changes</summary>
+          <pre>
+            <code id="publish-change-diff" />
+          </pre>
+        </details>
+        <p id="publish-review-status" aria-live="polite" />
+        <div className="publish-review-dialog__actions">
+          <button id="confirm-publish" type="button" data-primary="">
+            Publish this change
+          </button>
+        </div>
+      </dialog>
+
+      <dialog id="create-page-dialog" className="create-page-dialog">
+        <div className="publish-review-dialog__header">
+          <div>
+            <p className="eyebrow">Pages</p>
+            <h2>Create a page</h2>
+          </div>
+          <button id="cancel-create-page" type="button">
+            Cancel
+          </button>
+        </div>
+        <p>
+          Start with a blank page, then assemble it from the approved
+          components.
+        </p>
+        <label htmlFor="new-page-title">Page title</label>
+        <input id="new-page-title" type="text" maxLength={120} />
+        <label htmlFor="new-page-path">Page path</label>
+        <div className="page-path-input">
+          <span aria-hidden="true">/</span>
+          <input
+            id="new-page-path"
+            type="text"
+            maxLength={160}
+            placeholder="campaigns/summer-sale"
+          />
+        </div>
+        <label htmlFor="new-page-description">Description (optional)</label>
+        <textarea id="new-page-description" rows={3} maxLength={240} />
+        <p id="create-page-status" aria-live="polite" />
+        <div className="publish-review-dialog__actions">
+          <button id="confirm-create-page" type="button" data-primary="">
+            Create page
+          </button>
+        </div>
+      </dialog>
 
       <details className="document-panel">
         <summary>Developer page data</summary>

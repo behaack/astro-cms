@@ -289,6 +289,46 @@ const reusableTemplateList = document.querySelector<HTMLElement>(
   "#reusable-template-list",
 );
 const templateStatus = document.querySelector<HTMLElement>("#template-status");
+const publishReviewDialog = document.querySelector<HTMLDialogElement>(
+  "#publish-review-dialog",
+);
+const closePublishReviewButton = document.querySelector<HTMLButtonElement>(
+  "#close-publish-review",
+);
+const confirmPublishButton =
+  document.querySelector<HTMLButtonElement>("#confirm-publish");
+const publishChangeList = document.querySelector<HTMLUListElement>(
+  "#publish-change-list",
+);
+const publishChangeDiff = document.querySelector<HTMLElement>(
+  "#publish-change-diff",
+);
+const publishReviewStatus = document.querySelector<HTMLElement>(
+  "#publish-review-status",
+);
+const pageSwitcher =
+  document.querySelector<HTMLSelectElement>("#page-switcher");
+const openCreatePageButton =
+  document.querySelector<HTMLButtonElement>("#open-create-page");
+const createPageDialog = document.querySelector<HTMLDialogElement>(
+  "#create-page-dialog",
+);
+const cancelCreatePageButton = document.querySelector<HTMLButtonElement>(
+  "#cancel-create-page",
+);
+const confirmCreatePageButton = document.querySelector<HTMLButtonElement>(
+  "#confirm-create-page",
+);
+const newPageTitleInput =
+  document.querySelector<HTMLInputElement>("#new-page-title");
+const newPagePathInput =
+  document.querySelector<HTMLInputElement>("#new-page-path");
+const newPageDescriptionInput = document.querySelector<HTMLTextAreaElement>(
+  "#new-page-description",
+);
+const createPageStatus = document.querySelector<HTMLElement>(
+  "#create-page-status",
+);
 
 let activeComponent: Component | null = null;
 let lastDeletedCmsId: string | undefined;
@@ -296,6 +336,9 @@ let livePreviewDraftId: string | undefined;
 let livePreviewTimer: ReturnType<typeof setTimeout> | undefined;
 let livePreviewRequest = 0;
 let reusableTemplateControls: ReusableTemplateControls | undefined;
+let activeChangeReview: ChangeReview | undefined;
+let reviewedDocument: PageDocument | undefined;
+let savedDocumentSource = JSON.stringify(initialDocument);
 
 const PALETTE_DRAG_MIME = "application/x-astro-cms-component";
 const COMPONENT_DRAG_MIME = "application/x-astro-cms-node";
@@ -316,6 +359,29 @@ interface PageDocumentResponse {
   message?: string;
   issues?: Array<{ message: string }>;
 }
+
+interface ChangeReview {
+  baseRevision: string;
+  filePath: string;
+  hasChanges: boolean;
+  changes: Array<{
+    kind: "page" | "added" | "removed" | "changed" | "moved";
+    summary: string;
+  }>;
+  diff: string;
+}
+
+interface ChangeReviewResponse extends PageDocumentResponse {
+  review?: ChangeReview;
+}
+
+interface PublishResponse extends PageDocumentResponse {
+  commit?: string;
+  shortCommit?: string;
+  filePath?: string;
+}
+
+interface CreatePageResponse extends PageDocumentResponse {}
 
 interface InsertionPoint {
   parent: Component;
@@ -381,6 +447,64 @@ function pageDocumentResponseMessage(
     result.issues?.map((issue) => issue.message).join(" ") ??
     fallback
   );
+}
+
+function setPublishReviewStatus(
+  message: string,
+  state: "neutral" | "pending" | "success" | "error" = "neutral",
+): void {
+  if (!publishReviewStatus) return;
+  publishReviewStatus.textContent = message;
+  publishReviewStatus.dataset.state = state;
+}
+
+function showChangeReview(review: ChangeReview): void {
+  if (!publishChangeList || !publishChangeDiff || !confirmPublishButton) return;
+  publishChangeList.replaceChildren();
+  if (review.changes.length === 0) {
+    const item = document.createElement("li");
+    item.textContent = "There are no unpublished page changes.";
+    publishChangeList.append(item);
+  } else {
+    review.changes.forEach((change) => {
+      const item = document.createElement("li");
+      item.dataset.kind = change.kind;
+      item.textContent = change.summary;
+      publishChangeList.append(item);
+    });
+  }
+  publishChangeDiff.textContent = review.diff || "No file changes.";
+  confirmPublishButton.disabled = !review.hasChanges;
+  setPublishReviewStatus(
+    review.hasChanges
+      ? `Ready to publish ${review.filePath}.`
+      : "Everything on this page is already published to Git.",
+    review.hasChanges ? "neutral" : "success",
+  );
+}
+
+function hasUnsavedChanges(): boolean {
+  return JSON.stringify(currentDocument()) !== savedDocumentSource;
+}
+
+function editorUrlForPage(route: string): string {
+  const url = new URL("/admin", window.location.origin);
+  url.searchParams.set("page", route);
+  return `${url.pathname}${url.search}`;
+}
+
+function setCreatePageStatus(message: string, error = false): void {
+  if (!createPageStatus) return;
+  createPageStatus.textContent = message;
+  createPageStatus.dataset.state = error ? "error" : "neutral";
+}
+
+function suggestedPagePath(title: string): string {
+  return title
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
 }
 
 function componentChildren(component: Component): Component[] {
@@ -1537,6 +1661,7 @@ saveProjectButton?.addEventListener("click", async () => {
       );
     }
 
+    savedDocumentSource = JSON.stringify(result.document);
     setSaveStatus("Changes saved.", "success");
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown error";
@@ -1558,7 +1683,9 @@ reloadProjectButton?.addEventListener("click", async () => {
   setSaveStatus("Loading the saved version…", "pending");
 
   try {
-    const response = await fetch("/api/page-document", { cache: "no-store" });
+    const pageUrl = new URL("/api/page-document", window.location.origin);
+    pageUrl.searchParams.set("route", initialDocument.route);
+    const response = await fetch(pageUrl, { cache: "no-store" });
     const result = (await response.json()) as PageDocumentResponse;
     if (!response.ok || !result.ok || !result.document) {
       throw new Error(
@@ -1567,6 +1694,7 @@ reloadProjectButton?.addEventListener("click", async () => {
     }
 
     const storedDocument = assertPageDocument(result.document);
+    savedDocumentSource = JSON.stringify(storedDocument);
     lastDeletedCmsId = undefined;
     replaceEditorContent(storedDocument.content);
     setCompositionStatus("Saved page reloaded.", "success");
@@ -1581,33 +1709,170 @@ reloadProjectButton?.addEventListener("click", async () => {
 
 publishProjectButton?.addEventListener("click", async () => {
   publishProjectButton.disabled = true;
+  setSaveStatus("Preparing a Git change review…", "pending");
+
+  try {
+    reviewedDocument = currentDocument();
+    const response = await fetch("/api/change-review", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ document: reviewedDocument }),
+    });
+    const result = (await response.json()) as ChangeReviewResponse;
+    if (!response.ok || !result.ok || !result.review) {
+      throw new Error(
+        pageDocumentResponseMessage(
+          result,
+          "The change review could not be created.",
+        ),
+      );
+    }
+
+    activeChangeReview = result.review;
+    showChangeReview(result.review);
+    publishReviewDialog?.showModal();
+    setSaveStatus("Review the change before publishing.", "success");
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Unknown error";
+    setSaveStatus(`Review failed: ${message}`, "error");
+  } finally {
+    publishProjectButton.disabled = false;
+  }
+});
+
+pageSwitcher?.addEventListener("change", () => {
+  const nextRoute = pageSwitcher.value;
+  if (nextRoute === initialDocument.route) return;
+  if (
+    hasUnsavedChanges() &&
+    !window.confirm(
+      "Open another page? Unsaved changes on this page will be discarded.",
+    )
+  ) {
+    pageSwitcher.value = initialDocument.route;
+    return;
+  }
+  window.location.assign(editorUrlForPage(nextRoute));
+});
+
+openCreatePageButton?.addEventListener("click", () => {
+  if (
+    hasUnsavedChanges() &&
+    !window.confirm(
+      "Create another page? Unsaved changes on this page will be discarded.",
+    )
+  ) {
+    return;
+  }
+  setCreatePageStatus("");
+  createPageDialog?.showModal();
+  newPageTitleInput?.focus();
+});
+
+cancelCreatePageButton?.addEventListener("click", () => {
+  createPageDialog?.close();
+});
+
+newPageTitleInput?.addEventListener("input", () => {
+  if (!newPagePathInput || newPagePathInput.dataset.edited === "true") return;
+  newPagePathInput.value = suggestedPagePath(newPageTitleInput.value);
+});
+
+newPagePathInput?.addEventListener("input", () => {
+  newPagePathInput.dataset.edited = String(newPagePathInput.value.length > 0);
+});
+
+confirmCreatePageButton?.addEventListener("click", async () => {
+  if (!newPageTitleInput || !newPagePathInput) return;
+  const title = newPageTitleInput.value.trim();
+  const route = `/${newPagePathInput.value.trim().replace(/^\/+|\/+$/g, "")}`;
+  if (!title || route === "/") {
+    setCreatePageStatus("Enter a page title and path.", true);
+    return;
+  }
+  confirmCreatePageButton.disabled = true;
+  if (cancelCreatePageButton) cancelCreatePageButton.disabled = true;
+  setCreatePageStatus("Creating the page…");
+
+  try {
+    const response = await fetch("/api/pages", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        route,
+        title,
+        description: newPageDescriptionInput?.value.trim() ?? "",
+      }),
+    });
+    const result = (await response.json()) as CreatePageResponse;
+    if (!response.ok || !result.ok || !result.document) {
+      throw new Error(
+        pageDocumentResponseMessage(result, "The page could not be created."),
+      );
+    }
+    setCreatePageStatus("Page created.");
+    createPageDialog?.close();
+    window.location.assign(editorUrlForPage(result.document.route));
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Unknown error";
+    setCreatePageStatus(message, true);
+    confirmCreatePageButton.disabled = false;
+    if (cancelCreatePageButton) cancelCreatePageButton.disabled = false;
+  }
+});
+
+closePublishReviewButton?.addEventListener("click", () => {
+  publishReviewDialog?.close();
+});
+
+confirmPublishButton?.addEventListener("click", async () => {
+  if (!activeChangeReview || !reviewedDocument) return;
+  confirmPublishButton.disabled = true;
+  if (closePublishReviewButton) closePublishReviewButton.disabled = true;
   if (saveProjectButton) saveProjectButton.disabled = true;
-  setSaveStatus("Checking the page and building it for publishing…", "pending");
+  if (publishProjectButton) publishProjectButton.disabled = true;
+  setPublishReviewStatus(
+    "Building the site and creating an isolated Git commit…",
+    "pending",
+  );
 
   try {
     const response = await fetch("/api/publish", {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ document: currentDocument() }),
+      body: JSON.stringify({
+        document: reviewedDocument,
+        baseRevision: activeChangeReview.baseRevision,
+      }),
     });
-    const result = (await response.json()) as PageDocumentResponse;
-    if (!response.ok || !result.ok || !result.document) {
+    const result = (await response.json()) as PublishResponse;
+    if (!response.ok || !result.ok || !result.document || !result.shortCommit) {
       throw new Error(
-        pageDocumentResponseMessage(result, "The production build failed."),
+        pageDocumentResponseMessage(result, "The Git publish failed."),
       );
     }
 
-    setSaveStatus(
-      result.message ??
-        "Production build ready. Deployment is not connected in this pilot.",
+    setPublishReviewStatus(
+      `Published as Git commit ${result.shortCommit}.`,
       "success",
     );
+    setSaveStatus(
+      result.message ?? `Published as Git commit ${result.shortCommit}.`,
+      "success",
+    );
+    savedDocumentSource = JSON.stringify(result.document);
+    activeChangeReview = undefined;
+    reviewedDocument = undefined;
+    window.setTimeout(() => publishReviewDialog?.close(), 700);
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown error";
+    setPublishReviewStatus(`Publish failed: ${message}`, "error");
     setSaveStatus(`Publish failed: ${message}`, "error");
+    confirmPublishButton.disabled = false;
   } finally {
-    publishProjectButton.disabled = false;
+    if (closePublishReviewButton) closePublishReviewButton.disabled = false;
     if (saveProjectButton) saveProjectButton.disabled = false;
+    if (publishProjectButton) publishProjectButton.disabled = false;
   }
 });
 

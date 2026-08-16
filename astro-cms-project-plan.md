@@ -218,13 +218,14 @@ The first durable local vertical slice is now implemented:
 
 - The private editor shell is hydrated as a React island, while GrapesJS remains an imperative editing adapter inside it.
 - React does not render or duplicate any website component.
-- A server-side local storage adapter validates neutral documents and maps the `/` route to `content/pages/home.json`.
+- A server-side local storage adapter validates neutral documents and maps routes to deterministic files: `/` uses `content/pages/home.json`, while `/campaigns/summer` uses `content/pages/campaigns/summer.json`.
+- The editor can list route-backed documents, create a validated blank page without overwriting an existing route, and switch the exact preview and publishing target together.
 - Saves write a uniquely named temporary file and replace the page file only after the complete document has been written.
 - The public page, metadata preview, and editor initialization all read the same project file on request.
 - Reload passes through the server storage adapter rather than browser storage.
 - The file remains formatted, inspectable JSON suitable for Git review.
 
-This proves local durability and editor-shell isolation. It does not yet prove hosted persistence, multi-user concurrency, Git publishing, reusable compositions, or nontechnical-user usability.
+This proves local durability, multi-page addressing, and editor-shell isolation. It does not prove hosted persistence, multi-user concurrency, page rename/deletion policy, or nontechnical-user usability.
 
 ### Direct Astro Canvas Update — 2026-08-15
 
@@ -266,7 +267,7 @@ The local-first MVP thesis has passed its remaining technical gates:
 - Browser testing saved the Hero section as `Campaign Hero`, started a blank page, inserted it, customized its Heading and Button, saved it, and cold-reloaded both the page and template from disk.
 - Validation now rejects unknown properties, wrong value types, unapproved select values, unsafe URL protocols, invalid nesting, duplicate IDs, and invalid root placement.
 - A browser attempt to save `javascript:alert(1)` as a Button destination stopped preview and was rejected by the save endpoint.
-- `Publish build` validates and saves the current page, runs the installed Astro production builder, and reports whether `dist/` was created successfully.
+- The initial publish action validated and saved the current page, ran the installed Astro production builder, and reported whether `dist/` was created successfully; the later Git milestone added review and an isolated commit.
 - The generated standalone production server rendered the customized page with no editor markers, direct-editing controls, development toolbar, React editor shell, or GrapesJS resources.
 
 **Thesis verdict:** pass for a local-first, single-project solution. Copy-based templates satisfy the MVP reuse requirement. Linked reusable definitions, second-project packaging, real-user usability observation, hosting integration, authentication, and editorial workflow remain separate adoption and product gates.
@@ -284,7 +285,7 @@ The shareability gate has passed at the workspace-package level:
 
 **Adoption verdict:** the architecture is reusable enough to continue toward a local-first release. This proves a source/workspace package boundary, not npm distribution, automated installation, compatibility guarantees, or user demand.
 
-**Investment verdict:** do not build the complete product yet. The next decisive gate is an observed, task-based usability pilot with a nontechnical marketing user. Build only the packaging and interaction improvements needed to make that pilot credible.
+**Investment verdict:** continue bounded, shareable local-first capabilities, but do not infer demand for a hosted product. The observed, task-based usability pilot remains the decisive human-usability gate; because it is deferred, ongoing development should avoid SaaS and enterprise-workflow commitments.
 
 ### Usability Pilot Preparation — 2026-08-15
 
@@ -312,7 +313,7 @@ Because human usability sessions are deferred, development continued along the l
 - `pnpm verify:package` installs the generated archive into a disposable consumer with workspace resolution disabled, removes redundant direct GrapesJS and Zod dependencies, and runs the consumer type check and production build.
 - Browser verification edited and saved a page through the installed archive. Its production server rendered the changed native Astro page with no client scripts or editor markers, and `/admin` returned 404.
 
-**Distribution verdict:** the source/workspace proof now extends to an installable package archive. Registry publishing and API stability remain deliberately unclaimed. The next low-risk engineering work is an initializer that creates the required manifest, layout, content directories, and integration configuration in an existing Astro project.
+**Distribution verdict:** the source/workspace proof extends to an installable package archive. Registry publishing and API stability remain deliberately unclaimed. The initializer described in the later milestone now creates and verifies the required starter integration.
 
 ---
 
@@ -817,7 +818,7 @@ Before building the surrounding CMS, create the smallest possible proof:
 9. Save a selected subtree as a reusable template.
 10. Insert the template into a second page.
 
-Items 1–8 and the seventh-component generalization proof are complete. Items 9–10 are the Phase 2 reusable-composition gate.
+Items 1–10 and the seventh-component generalization proof are complete. Actual unfamiliar-user usability remains a separate observation gate.
 
 ### Success Criteria
 
@@ -856,7 +857,7 @@ Failing the GrapesJS spike does not invalidate the Astro-CMS architecture. It me
 ### Phase 1 — Local Vertical Slice (Technically Complete)
 
 - **Implemented:** manifest-driven Astro registry with missing-file failure and seventh-component proof.
-- **Implemented:** page read/write and validation for the `/` route.
+- **Implemented:** deterministic route-to-file page storage, listing, safe creation, switching, read/write, and validation.
 - **Implemented:** constrained component library panel.
 - **Implemented:** property editing.
 - **Implemented:** exact responsive preview.
@@ -875,7 +876,26 @@ Failing the GrapesJS spike does not invalidate the Astro-CMS architecture. It me
 - **Implemented:** adopter-owned manifest, native component discovery, preview layout, content, and public route.
 - **Implemented:** development-only editor/API route injection with production exclusion.
 - **Verified:** independent edit, template, validation, save/reload, build, and production-runtime workflow.
-- **Still open:** npm packaging, installer/CLI, semantic-version compatibility, migrations, and developer documentation beyond the tested fixture.
+- **Implemented:** clean package archive with explicit exports, runtime and peer dependencies, licensing, and repeatable non-workspace verification.
+- **Implemented:** conservative `astro-cms init` command with dry-run, collision refusal, idempotency, conventional config wiring, native starter components, demo content, and adaptation guidance.
+- **Verified:** archive-installed initialization preserves an existing page, checks and builds the generated project, excludes `/admin` from production, and supports exact preview plus durable save in the browser.
+- **Still open:** registry publication, semantic-version compatibility, migrations, nonstandard/computed Astro config support, and compatibility across multiple Astro versions.
+
+### Initializer Milestone — Complete
+
+The initializer is intentionally conservative. It creates an isolated demonstration rather than replacing an adopter's route or design system. Before writing, it validates required direct dependencies, a single conventional Astro config, and every generated destination. Different existing content is treated as a collision and stops the whole plan. There is no force mode.
+
+The generated surface is sufficient to answer the adoption question:
+
+1. A developer can preview the full file plan with `astro-cms init --dry-run`.
+2. A conventional existing config retains its current properties and integrations.
+3. The existing home page remains untouched.
+4. Five native `.astro` components, their safe manifest, an exact-preview layout, neutral JSON content, and a separate demo route work immediately.
+5. Additional route-backed documents build through the generated nested demo route without adding an editor runtime to production.
+6. Running the initializer again makes no changes.
+7. The initialized site type-checks and builds with no production editor route.
+
+This removes manual scaffolding as the next technical adoption blocker. The next development choice should address a real capability gap rather than adding more setup automation without evidence.
 
 ### Phase 3 — Structured Content and Media
 
@@ -886,11 +906,29 @@ Failing the GrapesJS spike does not invalidate the Astro-CMS architecture. It me
 
 ### Phase 4 — Git Publishing
 
-- **Implemented foundation:** validate, save, and create a local Astro production build from the editor.
-- Add deterministic serialization and change previews.
+- **Implemented:** deterministic page serialization and atomic local save.
+- **Implemented:** review against the committed page with plain-language content changes and an optional technical diff.
+- **Implemented:** stale-file revision protection, staged-page conflict refusal, and rollback when build or commit fails.
+- **Implemented:** production build plus an isolated selected-page Git commit that preserves unrelated staged files, including the first commit of a newly created page.
 - Add GitHub App integration.
-- Add simple publish mode.
+- Add an explicit branch/push or pull-request policy only after choosing the adopter workflow.
 - Add deployment-status feedback and rollback.
+
+### Git Review and Local Publish Milestone — Complete
+
+The editor now treats save and publish as different operations. A user may save a draft repeatedly; the eventual review still compares the prospective page with the version in `HEAD`. The review presents content-level sentences first and keeps the unified JSON diff optional.
+
+Publishing is protected by both Git state and a file-content revision. It refuses to overwrite a file changed after review, refuses ambiguity when the active page itself is staged, and does not create empty commits. The builder runs before the commit; a build or commit failure restores the previous saved source. The successful commit uses a route-specific message and includes only the active page document, leaving unrelated staged work untouched.
+
+The archive-installed browser proof created commit `c394502`, rendered the committed heading in the production artifact, excluded `/admin`, and left the generated repository clean. Remote push, branch choice, pull requests, and deployment remain intentionally separate policy decisions.
+
+### Multi-Page Creation and Publishing Milestone — Complete
+
+The editor now lists page documents, switches the active editor/preview/save/publish target as one route, and creates blank pages only for validated, collision-free paths. Route mapping is deterministic and confined below `content/pages`; traversal, unsafe URL syntax, malformed slugs, and duplicate routes are rejected.
+
+The archive-installed browser proof created `/campaigns/summer`, assembled its native Astro component tree, saved `content/pages/campaigns/summer.json`, and published commit `7934576` containing only that untracked page. The subsequent static build generated `/astro-cms-demo/campaigns/summer` and still excluded `/admin`.
+
+Page rename and deletion remain deliberately separate because both can break inbound links and require explicit Git-history, redirect, and recovery policy. The multi-page milestone does not authorize either destructive operation implicitly.
 
 ### Phase 5 — Editorial Workflow
 

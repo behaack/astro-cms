@@ -23,6 +23,9 @@
 | Independent Astro adoption                        | Pass   | A second Astro site supplied only its manifest, native components, layout, styles, page, and content. It consumed the editor, renderer, validation, storage, preview, templates, and publisher through `@astro-cms/core` without copying those internals. |
 | Private/public route separation                   | Pass   | The second site exposes editor and filesystem APIs during local development, but its production build contains none of those routes. Its public page loads no client scripts, editor markers, React, or GrapesJS resources.                               |
 | Installable package archive                       | Pass   | `@astro-cms/core@0.1.0` was packed with a clean public source set and installed into an isolated consumer with workspace resolution disabled. The installed editor, save API, type check, and production build all passed.                                |
+| Safe existing-project initialization              | Pass   | The archive-installed `astro-cms init` command preserved an existing Astro page and integration configuration, created a native-component starter, became a no-op on its second run, and produced a checked static build without `/admin`.                |
+| Reviewable Git publishing                         | Pass   | A saved page was compared with its committed baseline, summarized in plain language, built, and committed from the archive-installed editor. The commit contained only the page file; stale/staged conflicts and build rollback are covered by tests.     |
+| Route-backed multi-page workflow                  | Pass   | Browser testing created `/campaigns/summer`, switched pages, assembled it through the native Astro canvas, saved it to a deterministic nested file, published only that new file, and built its public static route.                                      |
 
 ## Browser proof workflow
 
@@ -41,6 +44,9 @@
 13. Cold-reloaded its saved page and template, repeated the unsafe-URL rejection, and built from its editor.
 14. Verified that `/admin` is absent from the independent production server while the customized page retains the adopter's own markup, CSS, typography, and link.
 15. Packed `@astro-cms/core@0.1.0`, installed the archive into a non-workspace consumer, edited and saved through the installed code, and repeated the clean production-server audit.
+16. Installed the archive into a bare Astro project, ran its packaged initializer twice, edited the generated page through `/admin`, confirmed exact preview and durable save, and built the generated static site without editor routes.
+17. Initialized Git in that generated project, saved a heading change, reviewed its semantic and technical diff, published commit `c394502`, and verified that the commit contained only the page while the clean production artifact contained the change and omitted `/admin`.
+18. Created `/campaigns/summer` from the editor, assembled and exactly previewed **Summer starts here**, published commit `7934576` containing only its nested page document, and verified the generated public route while `/admin` remained absent from production.
 
 ## What this resolves
 
@@ -49,8 +55,8 @@ The architecture is capable of delivering the intended constrained page-building
 ## What this does not prove
 
 - That an unfamiliar marketing user finds the current prototype intuitive without observation or training.
-- Publishing to a package registry, a stable versioned API, automated project initialization, migrations, or compatibility across multiple Astro versions.
-- Hosted deployment, authentication, multi-user concurrency, approvals, media management, or GitHub publishing.
+- Publishing to a package registry, a stable versioned API, migrations, nonstandard/computed Astro config support, or compatibility across multiple Astro versions.
+- Remote Git push or pull requests, hosted deployment, authentication, multi-user concurrency, approvals, media management, or page rename/deletion policy.
 - Commercial demand for a managed product.
 
 These are distribution and product-validation questions. They no longer block the architectural thesis.
@@ -59,4 +65,4 @@ These are distribution and product-validation questions. They no longer block th
 
 The technical thesis is resolved in favor of continuing: the native-Astro, constrained-editor architecture works and can cross a project boundary.
 
-It is **not yet worth building all the way out**. The next funding-of-effort gate is an observed usability pilot with an actual nontechnical marketing user, followed by packaging only the friction that pilot exposes. Do not build SaaS infrastructure or enterprise workflow until real users validate the editing experience and request it.
+It is worth continuing the local-first editor, but **not yet worth building all the way out as a hosted product**. The human usability gate remains unresolved and should still precede SaaS infrastructure or enterprise workflow. While that observation is deferred, additional bounded, shareable capabilities may continue when they strengthen the solution without presuming commercial demand.

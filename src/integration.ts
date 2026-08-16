@@ -122,6 +122,8 @@ export default function astroCms(
         route("/preview", "package-routes/preview.astro");
         route("/preview/live/[draftId]", "package-routes/live-preview.astro");
         route("/api/page-document", "pages/api/page-document.ts");
+        route("/api/pages", "pages/api/pages.ts");
+        route("/api/change-review", "pages/api/change-review.ts");
         route("/api/preview-drafts", "pages/api/preview-drafts.ts");
         route("/api/templates", "pages/api/templates.ts");
         route("/api/publish", "pages/api/publish.ts");

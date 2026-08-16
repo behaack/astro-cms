@@ -1,0 +1,46 @@
+---
+interface Props {
+  label: string;
+  href: string;
+  appearance?: "solid" | "outline";
+  editorId?: string;
+}
+
+const { label, href, appearance = "solid", editorId } = Astro.props;
+---
+
+<a
+  class:list={["cms-button", `cms-button--${appearance}`]}
+  href={href}
+  data-astro-cms-node={editorId}
+>
+  {label}
+</a>
+
+<style>
+  .cms-button {
+    display: inline-flex;
+    min-height: 3rem;
+    align-items: center;
+    justify-content: center;
+    padding: 0.75rem 1.2rem;
+    border: 2px solid currentColor;
+    border-radius: 999px;
+    font:
+      700 0.95rem/1 ui-sans-serif,
+      system-ui,
+      sans-serif;
+    text-decoration: none;
+  }
+
+  .cms-button--solid {
+    color: #f8faf8;
+    border-color: #17201d;
+    background: #17201d;
+  }
+
+  .cms-button--outline {
+    color: inherit;
+    background: transparent;
+  }
+</style>

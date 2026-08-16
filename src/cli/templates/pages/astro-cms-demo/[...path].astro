@@ -1,0 +1,33 @@
+---
+import DocumentRenderer from "@astro-cms/core/renderer";
+import {
+  listLocalPageDocuments,
+  readLocalPageDocument,
+} from "@astro-cms/core/store";
+
+import AstroCmsPreviewLayout from "../../layouts/AstroCmsPreviewLayout.astro";
+
+export async function getStaticPaths() {
+  const pages = await listLocalPageDocuments();
+  return pages
+    .filter((page) => page.route !== "/")
+    .map((page) => ({
+      params: { path: page.route.slice(1) },
+      props: { route: page.route },
+    }));
+}
+
+interface Props {
+  route: string;
+}
+
+const { route } = Astro.props;
+const document = await readLocalPageDocument(route);
+---
+
+<AstroCmsPreviewLayout
+  title={document.title}
+  description={document.description}
+>
+  <DocumentRenderer document={document} />
+</AstroCmsPreviewLayout>

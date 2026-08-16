@@ -4,6 +4,9 @@
   "description": "Constrained visual editing for native Astro components.",
   "license": "MIT",
   "type": "module",
+  "bin": {
+    "astro-cms": "./src/cli/astro-cms.mjs"
+  },
   "files": [
     "src/astro-cms-virtual.d.ts",
     "src/integration.ts",
@@ -12,6 +15,9 @@
     "!src/cms/component-manifest.ts",
     "!src/cms/document-test-helpers.ts",
     "src/components/renderer",
+    "src/cli/*.mjs",
+    "!src/cli/*.test.mjs",
+    "src/cli/templates",
     "src/editor",
     "src/package-routes",
     "src/pages/api",
@@ -31,6 +37,7 @@
     "./integration": "./src/integration.ts",
     "./renderer": "./src/components/renderer/DocumentRenderer.astro",
     "./store": "./src/cms/local-page-store.ts",
+    "./git": "./src/cms/git-publisher.ts",
     "./types": "./src/cms/document-types.ts",
     "./contract": "./src/cms/component-contract.ts",
     "./package.json": "./package.json"
