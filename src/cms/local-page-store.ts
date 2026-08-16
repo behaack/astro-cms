@@ -226,9 +226,28 @@ export async function readLocalPageDocument(
 export async function listLocalPageDocuments(
   options: LocalPageStoreOptions = {},
 ): Promise<LocalPageSummary[]> {
+  const documents = await readAllLocalPageDocuments(options);
+  return documents
+    .map((document) => ({
+      route: document.route,
+      title: document.title,
+      ...(document.description === undefined
+        ? {}
+        : { description: document.description }),
+    }))
+    .sort((left, right) => {
+      if (left.route === "/") return -1;
+      if (right.route === "/") return 1;
+      return left.route.localeCompare(right.route);
+    });
+}
+
+export async function readAllLocalPageDocuments(
+  options: LocalPageStoreOptions = {},
+): Promise<PageDocument[]> {
   const directory = contentDirectory(options);
   const files = await pageFiles(directory);
-  const pages = await Promise.all(
+  const documents = await Promise.all(
     files.map(async (relativeFile) => {
       const expectedRoute = routeForRelativePageFile(relativeFile);
       const document = assertPageDocument(
@@ -239,16 +258,10 @@ export async function listLocalPageDocuments(
           `Page route ${document.route} does not match ${relativeFile.replaceAll("\\", "/")}.`,
         );
       }
-      return {
-        route: document.route,
-        title: document.title,
-        ...(document.description === undefined
-          ? {}
-          : { description: document.description }),
-      };
+      return document;
     }),
   );
-  return pages.sort((left, right) => {
+  return documents.sort((left, right) => {
     if (left.route === "/") return -1;
     if (right.route === "/") return 1;
     return left.route.localeCompare(right.route);

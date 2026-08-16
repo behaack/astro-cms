@@ -1,7 +1,10 @@
 import { spawn } from "node:child_process";
+import { createHash } from "node:crypto";
+import { lstat, readFile, realpath } from "node:fs/promises";
 import path from "node:path";
 
 import { componentDefinitions } from "./component-definitions";
+import { referencedImagePaths } from "./asset-references";
 import type {
   ComponentNode,
   PageDocument,
@@ -14,6 +17,11 @@ import {
   writeLocalPageDocument,
   type LocalPageStoreOptions,
 } from "./local-page-store";
+import {
+  LocalAssetStoreError,
+  resolveLocalUploadedImagePath,
+  type LocalAssetStoreOptions,
+} from "./local-asset-store";
 import { buildAstroProject, type LocalBuildResult } from "./local-publisher";
 import { assertPageDocument } from "./validation";
 
@@ -33,14 +41,22 @@ interface GitPageContext {
   tracked: boolean;
 }
 
+interface GitAssetContext {
+  publicPath: string;
+  relativeFilePath: string;
+  revision: string;
+  tracked: boolean;
+}
+
 export interface PageChange {
-  kind: "page" | "added" | "removed" | "changed" | "moved";
+  kind: "page" | "asset" | "added" | "removed" | "changed" | "moved";
   summary: string;
 }
 
 export interface LocalPageChangeReview {
   baseRevision: string;
   filePath: string;
+  assetFiles: string[];
   hasChanges: boolean;
   changes: PageChange[];
   diff: string;
@@ -52,9 +68,11 @@ export interface GitPublishResult {
   commit: string;
   shortCommit: string;
   filePath: string;
+  assetFiles: string[];
 }
 
-export interface GitPublishOptions extends LocalPageStoreOptions {
+export interface GitPublishOptions
+  extends LocalPageStoreOptions, LocalAssetStoreOptions {
   projectDirectory?: string;
   build?: () => Promise<LocalBuildResult>;
 }
@@ -240,6 +258,147 @@ function flattenNodes(document: PageDocument): Map<string, FlatNode> {
   return nodes;
 }
 
+async function gitAssetContexts(
+  document: PageDocument,
+  repositoryRoot: string,
+  projectDirectory: string,
+  options: GitPublishOptions,
+): Promise<GitAssetContext[]> {
+  const contexts: GitAssetContext[] = [];
+  const publicDirectory =
+    options.publicDirectory ?? path.join(projectDirectory, "public");
+
+  for (const publicPath of referencedImagePaths(document.content).filter(
+    (candidate) => candidate.startsWith("/uploads/"),
+  )) {
+    let filePath: string | undefined;
+    try {
+      filePath = resolveLocalUploadedImagePath(publicPath, { publicDirectory });
+    } catch (error) {
+      if (error instanceof LocalAssetStoreError) {
+        throw new GitPublishingError(error.message);
+      }
+      throw error;
+    }
+    if (!filePath || !isWithinDirectory(repositoryRoot, filePath)) {
+      throw new GitPublishingError(
+        `Uploaded image ${publicPath} is outside this project's Git repository.`,
+      );
+    }
+    const relativeFilePath = path
+      .relative(repositoryRoot, filePath)
+      .replaceAll("\\", "/");
+    let bytes: Buffer;
+    try {
+      const fileInfo = await lstat(filePath);
+      if (!fileInfo.isFile() || fileInfo.isSymbolicLink()) {
+        throw new GitPublishingError(
+          `Uploaded image ${publicPath} must be a regular file, not a link.`,
+        );
+      }
+      const realFilePath = await realpath(filePath);
+      if (!isWithinDirectory(repositoryRoot, realFilePath)) {
+        throw new GitPublishingError(
+          `Uploaded image ${publicPath} resolves outside this project's Git repository.`,
+        );
+      }
+      bytes = await readFile(filePath);
+    } catch (error) {
+      if (error instanceof GitPublishingError) throw error;
+      if ((error as NodeJS.ErrnoException).code === "ENOENT") {
+        throw new GitPublishingError(
+          `Uploaded image ${publicPath} is missing. Choose or upload it again before publishing.`,
+        );
+      }
+      throw error;
+    }
+
+    const stagedResult = await runGit(
+      ["diff", "--cached", "--quiet", "--", relativeFilePath],
+      repositoryRoot,
+    );
+    if (stagedResult.code === 1) {
+      throw new GitPublishingError(
+        `Uploaded image ${publicPath} already has staged Git changes. Commit or unstage them before publishing from Astro-CMS.`,
+      );
+    }
+    if (stagedResult.code !== 0) {
+      throw gitFailure(
+        stagedResult,
+        "Git could not inspect the uploaded image.",
+      );
+    }
+
+    const trackedResult = await runGit(
+      ["ls-files", "--error-unmatch", "--", relativeFilePath],
+      repositoryRoot,
+    );
+    if (trackedResult.code !== 0 && trackedResult.code !== 1) {
+      throw gitFailure(
+        trackedResult,
+        "Git could not inspect the uploaded image.",
+      );
+    }
+    const tracked = trackedResult.code === 0;
+    if (tracked) {
+      const modifiedResult = await runGit(
+        ["diff", "--quiet", "--", relativeFilePath],
+        repositoryRoot,
+      );
+      if (modifiedResult.code === 1) {
+        throw new GitPublishingError(
+          `Uploaded image ${publicPath} has unpublished file changes outside this page review. Commit or restore them first.`,
+        );
+      }
+      if (modifiedResult.code !== 0) {
+        throw gitFailure(
+          modifiedResult,
+          "Git could not inspect the uploaded image.",
+        );
+      }
+    } else {
+      const ignoredResult = await runGit(
+        ["check-ignore", "--quiet", "--", relativeFilePath],
+        repositoryRoot,
+      );
+      if (ignoredResult.code === 0) {
+        throw new GitPublishingError(
+          `Uploaded image ${publicPath} is ignored by Git and cannot be published.`,
+        );
+      }
+      if (ignoredResult.code !== 1) {
+        throw gitFailure(
+          ignoredResult,
+          "Git could not inspect the uploaded image.",
+        );
+      }
+    }
+
+    contexts.push({
+      publicPath,
+      relativeFilePath,
+      revision: createHash("sha256").update(bytes).digest("hex"),
+      tracked,
+    });
+  }
+  return contexts;
+}
+
+function publicationRevision(
+  pageRevision: string,
+  assets: GitAssetContext[],
+): string {
+  const hash = createHash("sha256").update(pageRevision);
+  for (const asset of assets) {
+    hash
+      .update("\0")
+      .update(asset.relativeFilePath)
+      .update("\0")
+      .update(asset.revision);
+  }
+  return hash.digest("hex");
+}
+
 function semanticChanges(
   before: PageDocument,
   after: PageDocument,
@@ -358,8 +517,14 @@ export async function reviewLocalPageDocument(
   );
   const current = await readLocalPageSnapshot(document.route, options);
   const git = await gitPageContext(current.filePath, projectDirectory);
+  const assets = await gitAssetContexts(
+    document,
+    git.repositoryRoot,
+    projectDirectory,
+    options,
+  );
   const prospectiveSource = serializePageDocument(document);
-  const changes = git.baselineSource
+  const changes: PageChange[] = git.baselineSource
     ? semanticChanges(
         assertPageDocument(JSON.parse(git.baselineSource)),
         document,
@@ -370,10 +535,23 @@ export async function reviewLocalPageDocument(
           summary: `Added page ${displayValue(document.title)} at ${document.route}.`,
         },
       ];
+  changes.push(
+    ...assets
+      .filter((asset) => !asset.tracked)
+      .map((asset) => ({
+        kind: "asset" as const,
+        summary: `Added uploaded image ${asset.publicPath}.`,
+      })),
+  );
+  const assetFiles = assets
+    .filter((asset) => !asset.tracked)
+    .map((asset) => asset.relativeFilePath);
   return {
-    baseRevision: current.revision,
+    baseRevision: publicationRevision(current.revision, assets),
     filePath: git.relativeFilePath,
-    hasChanges: git.baselineSource !== prospectiveSource,
+    assetFiles,
+    hasChanges:
+      git.baselineSource !== prospectiveSource || assetFiles.length > 0,
     changes,
     diff: unifiedDiff(
       git.baselineSource ?? "",
@@ -394,10 +572,7 @@ export async function publishGitProject(
   );
   const current = await readLocalPageSnapshot(document.route, options);
   const review = await reviewLocalPageDocument(document, options);
-  if (
-    current.revision !== baseRevision ||
-    review.baseRevision !== baseRevision
-  ) {
+  if (review.baseRevision !== baseRevision) {
     throw new StalePageRevisionError(
       "The saved page changed after this review. Review the latest version before publishing.",
     );
@@ -407,21 +582,29 @@ export async function publishGitProject(
   }
   const git = await gitPageContext(current.filePath, projectDirectory);
   let committed = false;
-  let stagedNewPage = false;
+  let attemptedToStagePublishFiles = false;
+  const filesToStage = [
+    ...(!git.tracked ? [git.relativeFilePath] : []),
+    ...review.assetFiles,
+  ];
+  const filesToCommit = [git.relativeFilePath, ...review.assetFiles];
   try {
     await writeLocalPageDocument(document, options);
     const build = await (
       options.build ?? (() => buildAstroProject(projectDirectory))
     )();
-    if (!git.tracked) {
+    if (filesToStage.length > 0) {
+      attemptedToStagePublishFiles = true;
       const addResult = await runGit(
-        ["add", "--", git.relativeFilePath],
+        ["add", "--", ...filesToStage],
         git.repositoryRoot,
       );
       if (addResult.code !== 0) {
-        throw gitFailure(addResult, "Git could not stage the new page.");
+        throw gitFailure(
+          addResult,
+          "Git could not stage the page publication.",
+        );
       }
-      stagedNewPage = true;
     }
     const commitResult = await runGit(
       [
@@ -430,7 +613,7 @@ export async function publishGitProject(
         "-m",
         `content: publish ${document.route}`,
         "--",
-        git.relativeFilePath,
+        ...filesToCommit,
       ],
       git.repositoryRoot,
     );
@@ -449,12 +632,13 @@ export async function publishGitProject(
       commit,
       shortCommit: commit.slice(0, 7),
       filePath: git.relativeFilePath,
+      assetFiles: review.assetFiles,
     };
   } catch (error) {
     if (!committed) {
-      if (stagedNewPage) {
+      if (attemptedToStagePublishFiles) {
         await runGit(
-          ["reset", "--quiet", "--", git.relativeFilePath],
+          ["reset", "--quiet", "--", ...filesToStage],
           git.repositoryRoot,
         );
       }

@@ -346,6 +346,13 @@ const assetPickerList =
 const assetPickerStatus = document.querySelector<HTMLElement>(
   "#asset-picker-status",
 );
+const assetUploadForm =
+  document.querySelector<HTMLFormElement>("#asset-upload-form");
+const assetUploadInput = document.querySelector<HTMLInputElement>(
+  "#asset-upload-input",
+);
+const uploadImageButton =
+  document.querySelector<HTMLButtonElement>("#upload-image");
 
 let activeComponent: Component | null = null;
 let lastDeletedCmsId: string | undefined;
@@ -381,9 +388,10 @@ interface PageDocumentResponse {
 interface ChangeReview {
   baseRevision: string;
   filePath: string;
+  assetFiles: string[];
   hasChanges: boolean;
   changes: Array<{
-    kind: "page" | "added" | "removed" | "changed" | "moved";
+    kind: "page" | "asset" | "added" | "removed" | "changed" | "moved";
     summary: string;
   }>;
   diff: string;
@@ -401,16 +409,43 @@ interface PublishResponse extends PageDocumentResponse {
 
 interface CreatePageResponse extends PageDocumentResponse {}
 
-interface ImageAsset {
+interface ImageAssetIdentity {
   publicPath: string;
   fileName: string;
   extension: string;
+}
+
+interface ImageAsset extends ImageAssetIdentity {
+  managedUpload: boolean;
+  usages: ImageUsage[];
+}
+
+interface ImageUsage {
+  kind: "page" | "template" | "draft";
+  id: string;
+  label: string;
 }
 
 interface ImageAssetsResponse {
   ok: boolean;
   assets?: ImageAsset[];
   message?: string;
+}
+
+interface ImageUploadResponse {
+  ok: boolean;
+  asset?: ImageAssetIdentity;
+  message?: string;
+}
+
+interface ImageRemovalResponse {
+  ok: boolean;
+  publicPath?: string;
+  tracked?: boolean;
+  commit?: string;
+  shortCommit?: string;
+  message?: string;
+  usages?: ImageUsage[];
 }
 
 interface InsertionPoint {
@@ -490,11 +525,71 @@ function setPublishReviewStatus(
 
 function setAssetPickerStatus(
   message: string,
-  state: "neutral" | "error" = "neutral",
+  state: "neutral" | "success" | "error" = "neutral",
 ): void {
   if (!assetPickerStatus) return;
   assetPickerStatus.textContent = message;
   assetPickerStatus.dataset.state = state;
+}
+
+function useImageAsset(asset: ImageAssetIdentity): void {
+  if (!activeComponent || !activeImagePropertyName) return;
+  activeComponent.set(activeImagePropertyName, asset.publicPath);
+  updateImageAssetTools();
+  refreshDocumentOutput();
+  setCompositionStatus(`${asset.fileName} selected.`, "success");
+  assetPickerDialog?.close();
+}
+
+function currentPageReferencesImage(publicPath: string): boolean {
+  const visit = (node: ComponentNode): boolean => {
+    const definition = componentDefinitions[node.type];
+    const usesImage = Object.entries(definition.properties).some(
+      ([propertyName, property]) =>
+        property.type === "image" && node.props[propertyName] === publicPath,
+    );
+    return usesImage || Boolean(node.children?.some(visit));
+  };
+  return currentDocument().content.some(visit);
+}
+
+async function removeImageAsset(
+  asset: ImageAsset,
+  button: HTMLButtonElement,
+): Promise<void> {
+  const confirmed = window.confirm(
+    `Remove ${asset.fileName} from the project? If it was already published, Astro-CMS will verify the production build and create an isolated Git commit.`,
+  );
+  if (!confirmed) return;
+
+  button.disabled = true;
+  setAssetPickerStatus(`Checking and removing ${asset.fileName}…`);
+  try {
+    const response = await fetch("/api/assets", {
+      method: "DELETE",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        publicPath: asset.publicPath,
+        document: currentDocument(),
+      }),
+    });
+    const result = (await response.json()) as ImageRemovalResponse;
+    if (!response.ok || !result.ok) {
+      throw new Error(result.message ?? "The image could not be removed.");
+    }
+    await loadImageAssets();
+    const message = result.message ?? `${asset.fileName} removed.`;
+    setAssetPickerStatus(message, "success");
+    setCompositionStatus(message, "success");
+  } catch (error) {
+    setAssetPickerStatus(
+      error instanceof Error
+        ? error.message
+        : "The image could not be removed.",
+      "error",
+    );
+    button.disabled = false;
+  }
 }
 
 async function loadImageAssets(): Promise<void> {
@@ -517,10 +612,12 @@ async function loadImageAssets(): Promise<void> {
     }
 
     for (const asset of result.assets) {
-      const button = document.createElement("button");
-      button.type = "button";
-      button.className = "asset-picker-card";
-      button.setAttribute("aria-label", `Use ${asset.fileName}`);
+      const card = document.createElement("article");
+      card.className = "asset-picker-card";
+      const chooseButton = document.createElement("button");
+      chooseButton.type = "button";
+      chooseButton.className = "asset-picker-card__choose";
+      chooseButton.setAttribute("aria-label", `Use ${asset.fileName}`);
 
       const image = document.createElement("img");
       image.src = asset.publicPath;
@@ -531,16 +628,51 @@ async function loadImageAssets(): Promise<void> {
       name.textContent = asset.fileName;
       const publicPath = document.createElement("code");
       publicPath.textContent = asset.publicPath;
-      button.append(image, name, publicPath);
-      button.addEventListener("click", () => {
-        if (!activeComponent || !activeImagePropertyName) return;
-        activeComponent.set(activeImagePropertyName, asset.publicPath);
-        updateImageAssetTools();
-        refreshDocumentOutput();
-        setCompositionStatus(`${asset.fileName} selected.`, "success");
-        assetPickerDialog?.close();
+      chooseButton.append(image, name, publicPath);
+      chooseButton.addEventListener("click", () => {
+        useImageAsset(asset);
       });
-      assetPickerList.append(button);
+
+      const usage = document.createElement("p");
+      usage.className = "asset-picker-card__usage";
+      const usedByCurrentPage = currentPageReferencesImage(asset.publicPath);
+      const usageLabels = asset.usages.map((item) =>
+        item.kind === "template"
+          ? `template: ${item.label}`
+          : `page: ${item.label}`,
+      );
+      if (
+        usedByCurrentPage &&
+        !asset.usages.some(
+          (item) => item.kind === "page" && item.id === initialDocument.route,
+        )
+      ) {
+        usageLabels.push("current page edit");
+      }
+      usage.textContent =
+        usageLabels.length > 0
+          ? `Used by ${usageLabels.join(", ")}`
+          : asset.managedUpload
+            ? "Not currently used"
+            : "Developer-managed project image";
+      card.append(chooseButton, usage);
+
+      if (asset.managedUpload) {
+        const removeButton = document.createElement("button");
+        removeButton.type = "button";
+        removeButton.className = "asset-picker-card__remove";
+        removeButton.textContent = "Remove unused image";
+        removeButton.disabled = usageLabels.length > 0;
+        removeButton.title =
+          usageLabels.length > 0
+            ? "Remove this image from every page and template before deleting it."
+            : "Remove this uploaded image from the project.";
+        removeButton.addEventListener("click", () => {
+          void removeImageAsset(asset, removeButton);
+        });
+        card.append(removeButton);
+      }
+      assetPickerList.append(card);
     }
     setAssetPickerStatus(
       `${result.assets.length} project image${result.assets.length === 1 ? "" : "s"} available.`,
@@ -1956,6 +2088,44 @@ openImageAssetsButton?.addEventListener("click", () => {
 
 closeAssetPickerButton?.addEventListener("click", () => {
   assetPickerDialog?.close();
+});
+
+assetUploadForm?.addEventListener("submit", async (event) => {
+  event.preventDefault();
+  const file = assetUploadInput?.files?.[0];
+  if (!file) {
+    setAssetPickerStatus("Choose an image to upload.", "error");
+    return;
+  }
+
+  if (uploadImageButton) uploadImageButton.disabled = true;
+  if (assetUploadInput) assetUploadInput.disabled = true;
+  setAssetPickerStatus(`Uploading ${file.name}…`);
+  try {
+    const formData = new FormData();
+    formData.append("file", file);
+    const response = await fetch("/api/assets", {
+      method: "POST",
+      body: formData,
+    });
+    const result = (await response.json()) as ImageUploadResponse;
+    if (!response.ok || !result.ok || !result.asset) {
+      throw new Error(result.message ?? "The image could not be uploaded.");
+    }
+    assetUploadForm.reset();
+    setAssetPickerStatus(`${result.asset.fileName} uploaded.`, "success");
+    useImageAsset(result.asset);
+  } catch (error) {
+    setAssetPickerStatus(
+      error instanceof Error
+        ? error.message
+        : "The image could not be uploaded.",
+      "error",
+    );
+  } finally {
+    if (uploadImageButton) uploadImageButton.disabled = false;
+    if (assetUploadInput) assetUploadInput.disabled = false;
+  }
 });
 
 closePublishReviewButton?.addEventListener("click", () => {

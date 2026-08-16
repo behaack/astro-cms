@@ -7,21 +7,17 @@ import {
   StalePageRevisionError,
   type GitPublishResult,
 } from "../../cms/git-publisher";
+import {
+  LocalPublicationInProgressError,
+  withLocalPublicationLock,
+} from "../../cms/local-publication-lock";
 import { validatePageDocument } from "../../cms/validation";
 
 const MAX_REQUEST_BYTES = 512 * 1024;
-let activePublication: Promise<GitPublishResult> | undefined;
 
 export const prerender = false;
 
 export const POST: APIRoute = async ({ request }) => {
-  if (activePublication) {
-    return Response.json(
-      { ok: false, message: "A production build is already running." },
-      { status: 409 },
-    );
-  }
-
   const contentLength = Number(request.headers.get("content-length") ?? 0);
   if (contentLength > MAX_REQUEST_BYTES) {
     return Response.json(
@@ -60,31 +56,36 @@ export const POST: APIRoute = async ({ request }) => {
   if (issues.length > 0) {
     return Response.json({ ok: false, issues }, { status: 422 });
   }
+  const document = body.document;
+  const baseRevision = body.baseRevision;
 
   try {
-    activePublication = publishGitProject(body.document, body.baseRevision);
-    const result = await activePublication;
+    const result: GitPublishResult = await withLocalPublicationLock(
+      "Page publishing",
+      () => publishGitProject(document, baseRevision),
+    );
     return Response.json({
       ok: true,
       document: result.document,
       commit: result.commit,
       shortCommit: result.shortCommit,
       filePath: result.filePath,
+      assetFiles: result.assetFiles,
       message: `Published as Git commit ${result.shortCommit}. The production build is ready; pushing and deployment are not connected.`,
     });
   } catch (error) {
     const message =
-      error instanceof GitPublishingError
+      error instanceof GitPublishingError ||
+      error instanceof LocalPublicationInProgressError
         ? error.message
         : "The page could not be published.";
     const status =
-      error instanceof StalePageRevisionError
+      error instanceof StalePageRevisionError ||
+      error instanceof LocalPublicationInProgressError
         ? 409
         : error instanceof NoPageChangesError
           ? 422
           : 500;
     return Response.json({ ok: false, message }, { status });
-  } finally {
-    activePublication = undefined;
   }
 };

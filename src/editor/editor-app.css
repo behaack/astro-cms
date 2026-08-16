@@ -704,12 +704,59 @@
   margin-top: 1rem;
 }
 
+.asset-upload-form {
+  display: grid;
+  grid-template-columns: minmax(12rem, 1fr) minmax(12rem, 1.4fr) auto;
+  align-items: center;
+  gap: 0.8rem;
+  margin-top: 1rem;
+  padding: 0.85rem;
+  border: 1px solid #cbd7d0;
+  border-radius: 0.6rem;
+  background: #f5f8f6;
+}
+
+.asset-upload-form label {
+  display: block;
+  font-weight: 700;
+}
+
+.asset-upload-form p {
+  margin: 0.2rem 0 0;
+  color: #476158;
+  font-size: 0.75rem;
+}
+
+.asset-upload-form input {
+  min-width: 0;
+}
+
+.asset-upload-form button[data-primary] {
+  border-color: #173c30;
+  color: #fff;
+  background: #173c30;
+  font-weight: 700;
+}
+
 .asset-picker-card {
   display: grid;
   gap: 0.55rem;
   min-width: 0;
   padding: 0.65rem;
+  border: 1px solid #cbd7d0;
+  border-radius: 0.55rem;
+  background: #fff;
+}
+
+.asset-picker-dialog .asset-picker-card__choose {
+  display: grid;
+  gap: 0.55rem;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
   text-align: left;
+  background: transparent;
 }
 
 .asset-picker-card img {
@@ -726,6 +773,21 @@
   overflow-wrap: anywhere;
 }
 
+.asset-picker-card__usage {
+  min-height: 2.2em;
+  margin: 0;
+  color: #476158;
+  font-size: 0.72rem;
+}
+
+.asset-picker-dialog .asset-picker-card__remove {
+  justify-self: start;
+  padding: 0.4rem 0.55rem;
+  border-color: #c8a19b;
+  color: #8f3025;
+  font-size: 0.72rem;
+}
+
 .asset-picker-card span {
   font-weight: 700;
 }
@@ -737,6 +799,10 @@
 
 #asset-picker-status[data-state="error"] {
   color: #a2392b;
+}
+
+#asset-picker-status[data-state="success"] {
+  color: #17623d;
 }
 
 @media (max-width: 1000px) {
@@ -782,6 +848,11 @@
 
   .page-manager {
     grid-template-columns: 1fr;
+  }
+
+  .asset-upload-form {
+    grid-template-columns: 1fr;
+    align-items: stretch;
   }
 
   .editor-sidebar,

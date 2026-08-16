@@ -14,6 +14,7 @@ import {
   reviewLocalPageDocument,
   StalePageRevisionError,
 } from "./git-publisher";
+import { saveLocalImageUpload } from "./local-asset-store";
 import {
   createLocalPageDocument,
   readLocalPageSnapshot,
@@ -53,7 +54,9 @@ async function createGitProject() {
   );
   temporaryDirectories.push(projectDirectory);
   const contentDirectory = path.join(projectDirectory, "content", "pages");
+  const publicDirectory = path.join(projectDirectory, "public");
   await mkdir(contentDirectory, { recursive: true });
+  await mkdir(publicDirectory, { recursive: true });
   await writeLocalPageDocument(initialDocument, { contentDirectory });
   await runGit(["init"], projectDirectory);
   await runGit(["config", "user.name", "Astro-CMS Test"], projectDirectory);
@@ -63,12 +66,32 @@ async function createGitProject() {
   );
   await runGit(["add", "content/pages/home.json"], projectDirectory);
   await runGit(["commit", "-m", "initial website"], projectDirectory);
-  return { projectDirectory, contentDirectory };
+  return { projectDirectory, contentDirectory, publicDirectory };
 }
 
 function changedHeading(text: string) {
   const document = structuredClone(initialDocument);
   requireNodeByType(document, "Heading").props.text = text;
+  return document;
+}
+
+const validPng = new Uint8Array([
+  0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0x00,
+]);
+
+function documentWithImage(publicPath: string) {
+  const document = changedHeading("Campaign with uploaded image");
+  const stack = requireNodeByType(document, "Stack");
+  stack.children ??= [];
+  stack.children.push({
+    id: "uploaded-image",
+    type: "Image",
+    props: {
+      src: publicPath,
+      alt: "Campaign hero",
+      aspect: "landscape",
+    },
+  });
   return document;
 }
 
@@ -252,5 +275,110 @@ describe("Git-oriented publishing", () => {
         build: async () => ({ output: "should not build" }),
       }),
     ).rejects.toThrow(NoPageChangesError);
+  });
+
+  it("reviews and commits a referenced uploaded image with the page", async () => {
+    const { projectDirectory, contentDirectory, publicDirectory } =
+      await createGitProject();
+    const asset = await saveLocalImageUpload(
+      { fileName: "Campaign Hero.png", bytes: validPng },
+      { publicDirectory },
+    );
+    const document = documentWithImage(asset.publicPath);
+    await writeFile(
+      path.join(projectDirectory, "unrelated.txt"),
+      "keep this staged\n",
+      "utf8",
+    );
+    await runGit(["add", "unrelated.txt"], projectDirectory);
+
+    const review = await reviewLocalPageDocument(document, {
+      projectDirectory,
+      contentDirectory,
+      publicDirectory,
+    });
+
+    expect(review.assetFiles).toEqual(["public/uploads/campaign-hero.png"]);
+    expect(review.changes).toContainEqual({
+      kind: "asset",
+      summary: "Added uploaded image /uploads/campaign-hero.png.",
+    });
+
+    const result = await publishGitProject(document, review.baseRevision, {
+      projectDirectory,
+      contentDirectory,
+      publicDirectory,
+      build: async () => ({ output: "build complete" }),
+    });
+
+    expect(result.assetFiles).toEqual(["public/uploads/campaign-hero.png"]);
+    const committedFiles = await runGit(
+      ["show", "--pretty=format:", "--name-only", "HEAD"],
+      projectDirectory,
+    );
+    expect(committedFiles).toContain("content/pages/home.json");
+    expect(committedFiles).toContain("public/uploads/campaign-hero.png");
+    expect(
+      await runGit(["diff", "--cached", "--name-only"], projectDirectory),
+    ).toContain("unrelated.txt");
+  });
+
+  it("rejects a missing image referenced from the upload directory", async () => {
+    const { projectDirectory, contentDirectory, publicDirectory } =
+      await createGitProject();
+
+    await expect(
+      reviewLocalPageDocument(documentWithImage("/uploads/missing.png"), {
+        projectDirectory,
+        contentDirectory,
+        publicDirectory,
+      }),
+    ).rejects.toThrow("Uploaded image /uploads/missing.png is missing.");
+  });
+
+  it("rejects publication when an uploaded image changes after review", async () => {
+    const { projectDirectory, contentDirectory, publicDirectory } =
+      await createGitProject();
+    const asset = await saveLocalImageUpload(
+      { fileName: "Campaign Hero.png", bytes: validPng },
+      { publicDirectory },
+    );
+    const document = documentWithImage(asset.publicPath);
+    const review = await reviewLocalPageDocument(document, {
+      projectDirectory,
+      contentDirectory,
+      publicDirectory,
+    });
+    await writeFile(
+      path.join(publicDirectory, "uploads", "campaign-hero.png"),
+      new Uint8Array([...validPng, 0x01]),
+    );
+
+    await expect(
+      publishGitProject(document, review.baseRevision, {
+        projectDirectory,
+        contentDirectory,
+        publicDirectory,
+        build: async () => ({ output: "should not build" }),
+      }),
+    ).rejects.toThrow(StalePageRevisionError);
+  });
+
+  it("refuses to publish an uploaded image that was already staged", async () => {
+    const { projectDirectory, contentDirectory, publicDirectory } =
+      await createGitProject();
+    const asset = await saveLocalImageUpload(
+      { fileName: "Campaign Hero.png", bytes: validPng },
+      { publicDirectory },
+    );
+    await runGit(["add", "public/uploads/campaign-hero.png"], projectDirectory);
+
+    await expect(
+      reviewLocalPageDocument(documentWithImage(asset.publicPath), {
+        projectDirectory,
+        contentDirectory,
+        publicDirectory,
+      }),
+    ).rejects.toThrow("already has staged Git changes");
   });
 });

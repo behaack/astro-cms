@@ -93,16 +93,19 @@ publish** action:
    newly created page that is not tracked yet.
 2. Compares that baseline with the editor's prospective document, even when a
    tracked draft was already saved to the working tree.
-3. Presents plain-language content changes and an optional unified file diff.
-4. Records the current file revision so a later external save cannot be
-   overwritten from a stale review.
+3. Finds newly uploaded images referenced by approved image properties and
+   presents them alongside the plain-language content changes.
+4. Records a combined page-and-image revision so a later external save or
+   asset change cannot be published from a stale review.
 5. Writes deterministically ordered JSON and runs the production build.
-6. Creates a commit containing only the selected route's page document.
+6. Creates a commit containing only the selected route's page document and its
+   newly referenced uploads.
 
 Unrelated staged files remain staged and are not included. A staged change to
-the page itself is refused because its ownership is ambiguous. If the build or
-commit fails, the previous page source is restored. An unchanged page does not
-create an empty commit.
+the page or a referenced upload is refused because its ownership is ambiguous.
+If the build or commit fails, the previous page source is restored and the
+uploaded file remains available for retry. An unchanged page with no new asset
+does not create an empty commit.
 
 This is deliberately a local Git boundary. Astro-CMS does not push, open a pull
 request, choose a branch, or trigger a hosting provider. Existing repository
@@ -110,6 +113,22 @@ automation can do those jobs once the project owner chooses the desired policy.
 Git must be installed, the repository must have an initial commit, and a Git
 user name and email must be configured. A newly created page may be untracked;
 an already staged active page is refused because ownership would be ambiguous.
+
+## Manage uploaded images safely
+
+The project-image chooser distinguishes developer-managed files from raster
+images uploaded through Astro-CMS. It reports references from every saved page
+and reusable template, and the removal endpoint also checks the active unsaved
+page supplied by the editor. An image cannot be removed while any of those
+references remain.
+
+An unused upload that has never been committed is removed directly. Removing
+an unused upload already tracked by Git first verifies that the file is
+unchanged and unstaged, removes it, runs the production build, and creates an
+isolated Git commit containing only that deletion. If the build or commit
+fails, the original bytes are restored. Unrelated staged files remain staged.
+Files elsewhere in `public`, symbolic links, and malformed upload paths cannot
+be removed through this endpoint.
 
 ## Configure manually
 
@@ -166,5 +185,5 @@ build still omitted `/admin`, and the repository was clean afterward.
 This proves archive distribution, safe initialization, and local Git publishing
 for conventional Astro projects. It does not prove registry publishing,
 semantic-version compatibility, migrations, remote push/deployment policy,
-page rename/deletion policy, image upload/optimization, nonstandard/computed
+page rename/deletion policy, image replacement/optimization, nonstandard/computed
 config modification, or support across multiple Astro versions.

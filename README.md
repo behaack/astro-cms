@@ -2,7 +2,7 @@
 
 This repository starts the feasibility prototype described in [`astro-cms-project-plan.md`](./astro-cms-project-plan.md).
 
-The scaffold proves thirteen independent foundations:
+The scaffold proves fifteen independent foundations:
 
 1. A neutral, validated component document can render through native `.astro` components with no public editor runtime.
 2. GrapesJS Core can manipulate that neutral component structure without becoming the canonical renderer or persistence format.
@@ -17,6 +17,8 @@ The scaffold proves thirteen independent foundations:
 11. A saved or unsaved page can be reviewed against the last Git commit in plain language, protected against stale-file overwrites, built for production, and committed without including unrelated staged files.
 12. Editors can list, create, and switch among route-backed pages; a newly created nested page can pass through the exact Astro preview, deterministic storage, page-only Git publishing, and a real static public route.
 13. Image properties can browse the adopting site's public assets, require alternative text, reject non-image protocols, and update the native Astro preview without exposing file paths outside the public directory.
+14. Editors can upload verified raster images into a collision-safe `public/uploads` library, use them immediately in the exact Astro preview, and publish each newly referenced image in the same isolated Git commit as its page.
+15. The image library reports usage across saved pages and reusable templates, protects references in the active unsaved page, removes unpublished orphans directly, and removes unused published uploads through an isolated, build-verified Git commit.
 
 ## Run it
 
@@ -70,7 +72,7 @@ pnpm exec astro-cms init
 
 The command adds an isolated `/astro-cms-demo` route family, six native starter components, a sample public image, a manifest, preview layout, editable JSON document, and local adaptation guide. The root demo reads `content/pages/home.json`; additional documents such as `content/pages/campaigns/summer.json` build at `/astro-cms-demo/campaigns/summer`. It updates a conventional `defineConfig({...})` Astro configuration while preserving existing integrations. It has no force mode: a conflicting file or unsupported config shape stops the run before any project file is changed.
 
-Commit the initialized files once, then **Review & publish** in `/admin` provides a local Git publishing loop. It compares the selected page with `HEAD` (or recognizes a newly created page), summarizes content changes, shows the technical file diff on demand, creates a production build, and commits only that page document. It never pushes or deploys automatically.
+Commit the initialized files once, then **Review & publish** in `/admin` provides a local Git publishing loop. It compares the selected page with `HEAD` (or recognizes a newly created page), summarizes content and newly referenced image changes, shows the technical page diff on demand, creates a production build, and commits only that page document plus its new uploaded images. It never pushes or deploys automatically.
 
 ## Usability gate
 
@@ -88,9 +90,9 @@ React is used only to mount and manage the private `/admin` shell. It does not r
 
 The component registry is now manifest-driven. `Callout.astro` was added as a seventh primitive without changing the core editor: its palette entry, generated property controls, placement policy, neutral schema type, and renderer mapping all come from [`src/cms/component-manifest.ts`](./src/cms/component-manifest.ts). Native implementations are discovered statically by the matching `src/components/primitives/<Type>.astro` filename.
 
-Selected component subtrees can be saved as copy-based reusable templates. Templates are validated and atomically written to `content/templates`, and every insertion generates fresh node identities so copies can safely diverge. **Review & publish** compares the active page with its committed version, protects the review with a file revision, saves deterministically, runs the installed Astro production builder, and creates a page-only Git commit. It does not push that commit or claim to deploy the artifact to a hosting provider.
+Selected component subtrees can be saved as copy-based reusable templates. Templates are validated and atomically written to `content/templates`, and every insertion generates fresh node identities so copies can safely diverge. **Review & publish** compares the active page with its committed version, protects the review with a page-and-asset revision, saves deterministically, runs the installed Astro production builder, and creates an isolated Git commit containing the page and any newly referenced uploads. It does not push that commit or claim to deploy the artifact to a hosting provider.
 
-Manifest properties marked as `image` retain a normal inspectable string path but add a project-image chooser in the editor. The chooser recursively lists supported images from `public`, skips hidden directories and symbolic links, and changes only the selected approved property. Image sources accept relative, HTTP, or HTTPS paths; alternative text remains required by document validation.
+Manifest properties marked as `image` retain a normal inspectable string path but add a project-image chooser in the editor. The chooser recursively lists supported images from `public`, skips hidden directories and symbolic links, and changes only the selected approved property. Editors can also upload PNG, JPEG, GIF, WebP, or AVIF files up to 8 MB. Uploads are verified from their file signature, safely renamed without overwriting existing files, and confined to `public/uploads`; SVG upload is deliberately excluded. Each image card reports its saved page and reusable-template usage, while the active unsaved page is checked in the browser and again by the server. Developer-managed public images cannot be deleted in the editor. An unused unpublished upload can be removed directly; removing an unused tracked upload runs the production build and creates an image-only Git commit while preserving unrelated staged work. Image sources accept relative, HTTP, or HTTPS paths, and alternative text remains required by document validation.
 
 ## Register a native Astro component
 
@@ -99,4 +101,4 @@ Manifest properties marked as `image` retain a normal inspectable string path bu
 
 No GrapesJS adapter, React renderer, document type list, schema enum, palette, or Astro registry file should be edited. The production build fails if a manifested primitive does not have a matching Astro file.
 
-In-memory live-preview drafts still expire after 30 minutes and disappear when the server restarts. The project-file save path is intentionally local-first and assumes a writable filesystem; hosted and serverless persistence remains future work. Git publishing covers the selected tracked or newly created page and requires a repository baseline plus a configured Git identity. Page rename and deletion are deliberately deferred because they require link and Git-history policy. The image library is read-only: upload, replacement, optimization, metadata editing, and usage reporting remain future media work. Linked reusable components, interactive Astro islands, authentication, remote push/deployment integration, and multi-user isolation also remain future work. The package archive and initializer are proven locally; registry publication, stable versioning, migrations, support for nonstandard Astro configs, and cross-version compatibility have not been proven.
+In-memory live-preview drafts still expire after 30 minutes and disappear when the server restarts. The project-file save and upload paths are intentionally local-first and assume a writable filesystem; hosted and serverless persistence remains future work. Git publishing covers the selected tracked or newly created page plus newly referenced uploads and requires a repository baseline plus a configured Git identity. Page rename and deletion are deliberately deferred because they require link and Git-history policy. Image replacement, optimization, dimensions and file-size metadata, and cross-document replacement remain future media work. Linked reusable components, interactive Astro islands, authentication, remote push/deployment integration, and multi-user isolation also remain future work. The package archive and initializer are proven locally; registry publication, stable versioning, migrations, support for nonstandard Astro configs, and cross-version compatibility have not been proven.

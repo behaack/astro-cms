@@ -335,6 +335,22 @@ export default function EditorApp({
           These images come from the website's public folder. Choosing one
           changes only the selected component's approved image path.
         </p>
+        <form id="asset-upload-form" className="asset-upload-form">
+          <div>
+            <label htmlFor="asset-upload-input">Upload a new image</label>
+            <p>PNG, JPEG, GIF, WebP, or AVIF. Maximum 8 MB.</p>
+          </div>
+          <input
+            id="asset-upload-input"
+            name="file"
+            type="file"
+            accept="image/png,image/jpeg,image/gif,image/webp,image/avif,.avif"
+            required
+          />
+          <button id="upload-image" type="submit" data-primary="">
+            Upload and use
+          </button>
+        </form>
         <div
           id="asset-picker-list"
           className="asset-picker-list"
