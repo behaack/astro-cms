@@ -10,6 +10,55 @@ describe("Astro-CMS page documents", () => {
     expect(validatePageDocument(homeDocumentJson)).toEqual([]);
   });
 
+  it("accepts versioned SEO overrides without changing legacy page fields", () => {
+    const document = structuredClone(homeDocumentJson);
+    Object.assign(document, {
+      seo: {
+        schemaVersion: 1,
+        title: "Astro page composition for marketing teams",
+        description: "Assemble native Astro pages from approved components.",
+        socialImage: "/uploads/astro-cms-social.png",
+        socialImageAlt: "The Astro-CMS page editor",
+        searchVisibility: "noindex",
+      },
+    });
+
+    expect(assertPageDocument(document)).toMatchObject({
+      title: homeDocumentJson.title,
+      description: homeDocumentJson.description,
+      seo: {
+        schemaVersion: 1,
+        title: "Astro page composition for marketing teams",
+        searchVisibility: "noindex",
+      },
+    });
+  });
+
+  it("rejects unsafe or inaccessible social-image metadata", () => {
+    const unsafeImageIssues = validatePageDocument({
+      ...homeDocumentJson,
+      seo: {
+        schemaVersion: 1,
+        socialImage: "javascript:alert(1)",
+        socialImageAlt: "Unsafe image",
+      },
+    });
+    const missingAltIssues = validatePageDocument({
+      ...homeDocumentJson,
+      seo: {
+        schemaVersion: 1,
+        socialImage: "/uploads/social.png",
+      },
+    });
+
+    expect(unsafeImageIssues.map((issue) => issue.message)).toContain(
+      "seo.socialImage: must be a safe relative, HTTP, or HTTPS image path",
+    );
+    expect(missingAltIssues.map((issue) => issue.message)).toContain(
+      "seo.socialImageAlt: is required when a social image is set",
+    );
+  });
+
   it("rejects children inside a leaf component", () => {
     const invalidNode = componentNodeSchema.parse({
       id: "heading-1",

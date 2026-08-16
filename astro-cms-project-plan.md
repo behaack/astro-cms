@@ -477,7 +477,11 @@ schemaVersion: 1
 route: /campaign
 title: Campaign
 seo:
+  title: Campaign
   description: A short description
+  socialImage: /uploads/campaign-card.webp
+  socialImageAlt: Campaign artwork
+  searchVisibility: public
 content:
   - id: hero-1
     type: Hero
@@ -506,6 +510,16 @@ JSON may be used instead of YAML if it produces safer tooling. The schema must s
 - Per-instance overrides.
 - SEO metadata.
 - Schema versions and migrations.
+
+The page title and description are the default search and social values. The
+SEO object may override the search title, provide a social image and required
+alternative text, and choose a constrained search-visibility value. Canonical
+URLs should not normally be stored as editable strings: they should be derived
+from the validated route plus Astro's configured `site` URL so a safe page
+rename cannot leave a stale canonical behind. Open Graph and Twitter tags
+should inherit the same values unless a later, demonstrated use case justifies
+separate overrides. Arbitrary raw meta tags or JSON-LD are not marketing-editable
+fields; structured data must come from typed developer-owned templates.
 
 GrapesJS project JSON may be used as transient editor state, but it is not the public persistence contract.
 
@@ -672,6 +686,26 @@ Edit → Save draft → Preview → Approve → Merge → Deploy
 
 Marketing sees Draft, Preview, Approve, and Publish—not branches, commits, and pull requests.
 
+### Search Discovery Outputs
+
+The canonical page document and public route list should also drive search
+discovery artifacts. Sitemap inclusion, canonical URLs, robots meta directives,
+and social metadata must not become separate hand-maintained sources of truth.
+
+- Public, canonical, indexable pages belong in the sitemap.
+- Draft, preview, editor, redirect-only, and `noindex` routes do not.
+- `robots.txt` points to the sitemap and expresses environment-level crawl
+  policy; it is not an authentication or route-protection mechanism.
+- Preview deployments should use both crawl blocking and page-level `noindex`
+  protection rather than relying on `robots.txt` alone.
+- Page creation, retirement, and rename must be reflected by the next verified
+  production build without manual sitemap editing.
+
+For a Git-backed production deployment, “published” means present in the Git
+revision being deployed; it is not another mutable flag stored beside the page.
+A local review build may contain the current uncommitted candidate so it can be
+validated before commit, but that does not make the candidate publicly deployed.
+
 ---
 
 ## 16. Developer Tooling
@@ -762,6 +796,8 @@ The MVP must prove this statement:
 - Edit approved properties.
 - Preview through the actual Astro renderer.
 - Save a composition as a reusable template.
+- Edit a validated search title, description, social image, social-image text,
+  and public/noindex visibility without editing arbitrary head markup.
 - Save changes locally.
 
 #### Infrastructure
@@ -770,6 +806,9 @@ The MVP must prove this statement:
 - Neutral page-document serializer.
 - Astro preview bridge.
 - Local filesystem storage.
+- Generated sitemap and robots discovery files for public pages.
+- Native Astro head rendering for canonical, robots, Open Graph, and social
+  metadata.
 - No database required.
 
 ### Deliberately Excluded
@@ -903,8 +942,105 @@ This removes manual scaffolding as the next technical adoption blocker. The next
 - Add collection forms.
 - **Implemented:** read-only browsing of supported project images below `public`, selected through manifest-declared Image properties.
 - **Implemented:** required alternative text and image-specific safe-source validation.
-- Add image upload, replacement, optimization, metadata editing, and usage reporting.
-- Add asset validation and usage reporting.
+- **Implemented:** verified image upload, collision-safe storage, immediate
+  preview use, and page-plus-upload Git publication.
+- **Implemented:** saved-page, reusable-template, and active-draft usage
+  reporting plus guarded unpublished and tracked-upload removal.
+- Add image replacement, optimization, dimensions, and file-size metadata.
+
+### Phase 3.5 — Search Discovery and SEO Metadata (In Progress)
+
+This phase adds search readiness without turning Astro-CMS into an SEO analysis
+service or introducing a second rendering system.
+
+- **Implemented:** backward-compatible, versioned page SEO metadata with
+  validated search title, description, social image and alternative text, and
+  constrained `public` or `noindex` visibility. Legacy title and description
+  remain fallbacks, and omitted visibility remains public.
+- **Implemented:** one shared metadata resolver plus adopter-owned native Astro
+  head components in the initializer and independent adoption fixture. They
+  render title, description, robots, Open Graph, and Twitter/X tags, derive
+  canonical and absolute social-image URLs only from Astro's configured `site`,
+  and force editor and preview routes to `noindex`.
+- **Implemented:** social images participate in existing upload publication and
+  asset-usage protection even when no visible Image component references them.
+- **Next:** add the marketing-facing SEO form and approximate search/social
+  previews, then make sitemap and `robots.txt` consume the same visibility
+  policy.
+
+#### Recommended Integration Choices
+
+1. Use Astro's official
+   [`@astrojs/sitemap`](https://docs.astro.build/en/guides/integrations-guide/sitemap/)
+   integration. Require an adopter-owned `site` URL, exclude non-public routes,
+   and support both statically generated CMS paths and explicitly supplied
+   pages when an SSR route cannot be discovered automatically.
+2. Generate `robots.txt` with a small native `src/pages/robots.txt.ts` endpoint
+   following Astro's official sitemap-discovery recipe. Do not make
+   [`astro-robots-txt`](https://github.com/alextim/astro-lib/tree/main/packages/astro-robots-txt)
+   a core dependency; the native route is small, transparent,
+   and uses the same `Astro.site` value without another package boundary.
+3. Generate search and social tags through an adopter-owned native
+   `SeoHead.astro` component in the production layout, following Astro's
+   [site-metadata guidance](https://docs.astro.build/en/guides/configuring-astro/#add-site-metadata).
+   Do not require [`astro-seo`](https://github.com/jonasmerlin/astro-seo) or
+   [Unhead](https://unhead.unjs.io/) in core. `astro-seo` may receive an optional
+   adapter recipe for projects that already use it; Unhead remains an adopter
+   choice for applications that genuinely need reactive head merging.
+4. Keep the integration optional and collision-safe. `astro-cms init` or a
+   later opt-in command must detect existing sitemap, robots, and head systems,
+   then stop or produce adaptation instructions rather than overwrite them.
+
+#### Page Contract and Editor Scope
+
+- Add developer-owned site defaults for site name, title template, locale,
+  default social image and alternative text, and optional social account data.
+  The deployed URL itself remains Astro's `site` configuration value.
+- Add a versioned SEO object to the canonical page schema with validated title,
+  description, social image, social-image alternative text, and constrained
+  search visibility.
+- Migrate existing documents non-destructively: current top-level title and
+  description remain the fallback inputs until the schema version is upgraded,
+  and an existing page is never silently assigned a different indexing policy.
+- Derive the canonical absolute URL from the page route, Astro `site`, `base`,
+  and trailing-slash policy.
+- Reuse the title, description, and social image for Open Graph and Twitter by
+  default so marketing does not maintain three nearly identical forms.
+- Show search-result and social-card previews as guidance, but label them as
+  approximations rather than promises about a search engine or social network.
+- Keep canonical overrides, arbitrary robots directives, and typed JSON-LD
+  templates developer-owned in the first slice.
+
+#### Build and Safety Contract
+
+- Sitemap generation includes only saved, published, canonical, indexable
+  routes and excludes `/admin`, preview endpoints, drafts, redirect aliases,
+  and `noindex` pages.
+- Static `getStaticPaths()` routes should be discovered by
+  `@astrojs/sitemap`; SSR deployments must receive explicit CMS page URLs
+  because the official integration cannot discover dynamic SSR routes.
+- Production `robots.txt` allows public content and points to the absolute
+  sitemap index, uses deterministic plain-text output, and returns a text/plain
+  content type. Preview/non-production policy blocks crawling and pages also
+  emit `noindex`.
+- The build fails on missing required metadata, an invalid canonical/site URL,
+  a social image without alternative text, conflicting index/sitemap policy,
+  duplicate canonical tags, or a public sitemap entry that does not resolve.
+- Do not add sitemap `priority` or `changefreq` controls to the marketing UI;
+  search engines may ignore them and they do not represent editorial content.
+
+#### Acceptance Proof
+
+1. Create, publish, rename, and retire a page; after each production build, the
+   sitemap contains exactly the current public canonical route.
+2. Inspect generated HTML and prove exactly one title, description, canonical,
+   robots policy, Open Graph set, and social-card set per page.
+3. Prove `robots.txt` points to the generated sitemap and that preview/editor
+   routes are absent from the sitemap and protected from indexing.
+4. Prove a `noindex` page is absent from the sitemap while remaining available
+   for intentional direct preview.
+5. Run the archive-installed consumer and initializer-consumer checks so the
+   feature is proven in an adopting Astro project, not only this repository.
 
 ### Phase 4 — Git Publishing
 
@@ -912,6 +1048,10 @@ This removes manual scaffolding as the next technical adoption blocker. The next
 - **Implemented:** review against the committed page with plain-language content changes and an optional technical diff.
 - **Implemented:** stale-file revision protection, staged-page conflict refusal, and rollback when build or commit fails.
 - **Implemented:** production build plus an isolated selected-page Git commit that preserves unrelated staged files, including the first commit of a newly created page.
+- **Implemented:** guarded non-home page retirement with incoming-link refusal,
+  isolated tracked deletion, and rollback.
+- **Implemented:** guarded non-home page rename with automatic saved-link
+  rewriting, one build-verified Git transaction, and rollback.
 - Add GitHub App integration.
 - Add an explicit branch/push or pull-request policy only after choosing the adopter workflow.
 - Add deployment-status feedback and rollback.
@@ -930,7 +1070,13 @@ The editor now lists page documents, switches the active editor/preview/save/pub
 
 The archive-installed browser proof created `/campaigns/summer`, assembled its native Astro component tree, saved `content/pages/campaigns/summer.json`, and published commit `7934576` containing only that untracked page. The subsequent static build generated `/astro-cms-demo/campaigns/summer` and still excluded `/admin`.
 
-Page rename and deletion remain deliberately separate because both can break inbound links and require explicit Git-history, redirect, and recovery policy. The multi-page milestone does not authorize either destructive operation implicitly.
+Page rename and deletion were deliberately implemented as separate guarded
+operations. Deletion refuses known incoming links. Rename repairs exact
+manifest-approved destinations in saved pages and templates while preserving
+query strings and fragments. Both protect `/`, preserve unrelated staged work,
+serialize against other local publication operations, and restore prior files
+when verification fails. External redirects remain a separate policy because
+the editor cannot discover bookmarks or inbound links outside the repository.
 
 ### Phase 5 — Editorial Workflow
 
@@ -1027,10 +1173,20 @@ Proposed foundations:
 - TypeScript for schemas, adapters, and validation.
 - GrapesJS Core for editing mechanics if the spike succeeds.
 - Zod or an equivalent portable schema library for validation.
+- Astro's official `@astrojs/sitemap` integration for public route discovery.
 - JSON or YAML files for canonical content.
 - Git for versioning and rollback.
 
 The Astro-CMS-owned layer should use a permissive open-source license such as MIT or Apache-2.0. Third-party dependencies must be replaceable at architectural boundaries, especially the visual editing engine.
+
+Dependency selection should remain conservative. Prefer official Astro
+integrations for build behavior, and prefer a small native Astro component or
+endpoint when it is clearer than a third-party wrapper. Community packages such
+as `astro-seo` and `astro-robots-txt` may be documented as optional adapters,
+but should not become required core dependencies unless they provide a proven
+capability the native contract cannot reasonably supply. Reactive head managers
+such as Unhead are outside the default architecture because public Astro pages
+do not require a client-side or framework-specific head runtime.
 
 The project should document:
 
@@ -1057,6 +1213,9 @@ The project has meaningful validation when:
 6. The saved content is portable, inspectable, and versionable.
 7. Removing the editor does not prevent Astro from rendering the site.
 8. **Proven:** another Astro project can adopt the component and document contracts without copying project-specific editor code.
+9. A published page emits validated search/social metadata and appears exactly
+   once in the generated sitemap, while preview, editor, retired, and `noindex`
+   routes remain excluded.
 
 ---
 

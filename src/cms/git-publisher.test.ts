@@ -277,14 +277,19 @@ describe("Git-oriented publishing", () => {
     ).rejects.toThrow(NoPageChangesError);
   });
 
-  it("reviews and commits a referenced uploaded image with the page", async () => {
+  it("reviews and commits an uploaded social image with the page", async () => {
     const { projectDirectory, contentDirectory, publicDirectory } =
       await createGitProject();
     const asset = await saveLocalImageUpload(
       { fileName: "Campaign Hero.png", bytes: validPng },
       { publicDirectory },
     );
-    const document = documentWithImage(asset.publicPath);
+    const document = changedHeading("Campaign with a social image");
+    document.seo = {
+      schemaVersion: 1,
+      socialImage: asset.publicPath,
+      socialImageAlt: "Campaign social card",
+    };
     await writeFile(
       path.join(projectDirectory, "unrelated.txt"),
       "keep this staged\n",
@@ -302,6 +307,11 @@ describe("Git-oriented publishing", () => {
     expect(review.changes).toContainEqual({
       kind: "asset",
       summary: "Added uploaded image /uploads/campaign-hero.png.",
+    });
+    expect(review.changes).toContainEqual({
+      kind: "page",
+      summary:
+        "Changed the social image from not set to “/uploads/campaign-hero.png”.",
     });
 
     const result = await publishGitProject(document, review.baseRevision, {

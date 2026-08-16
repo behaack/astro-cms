@@ -68,6 +68,7 @@ The initializer creates:
 - six native components in `src/components/cms`, including a safe Image primitive
 - `public/astro-cms-placeholder.svg` as a visible starter asset
 - `src/layouts/AstroCmsPreviewLayout.astro`
+- `src/components/AstroCmsSeoHead.astro`
 - the isolated `src/pages/astro-cms-demo.astro` route
 - `src/pages/astro-cms-demo/[...path].astro` for additional page documents
 - `content/pages/home.json`

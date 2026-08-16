@@ -1,5 +1,5 @@
 import { componentDefinitions } from "./component-definitions";
-import type { ComponentNode } from "./document-types";
+import type { ComponentNode, PageDocument } from "./document-types";
 
 export function referencedImagePaths(nodes: ComponentNode[]): string[] {
   const paths = new Set<string>();
@@ -24,4 +24,13 @@ export function referencesImage(
   publicPath: string,
 ): boolean {
   return referencedImagePaths(nodes).includes(publicPath);
+}
+
+export function referencedPageImagePaths(document: PageDocument): string[] {
+  return [
+    ...new Set([
+      ...referencedImagePaths(document.content),
+      ...(document.seo?.socialImage ? [document.seo.socialImage] : []),
+    ]),
+  ].sort();
 }

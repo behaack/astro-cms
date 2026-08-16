@@ -25,9 +25,6 @@ const { route } = Astro.props;
 const document = await readLocalPageDocument(route);
 ---
 
-<AstroCmsPreviewLayout
-  title={document.title}
-  description={document.description}
->
+<AstroCmsPreviewLayout document={document}>
   <DocumentRenderer document={document} />
 </AstroCmsPreviewLayout>

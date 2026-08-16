@@ -115,6 +115,7 @@ describe("project initialization", () => {
     const first = await initializeProject(projectDirectory);
     expect(first.configChanged).toBe(true);
     expect(first.created).toContain("src/astro-cms.manifest.ts");
+    expect(first.created).toContain("src/components/AstroCmsSeoHead.astro");
     expect(first.created).toContain("src/pages/astro-cms-demo.astro");
     expect(first.created).toContain("content/pages/home.json");
     expect(first.created).toContain("ASTRO-CMS.md");
@@ -128,7 +129,7 @@ describe("project initialization", () => {
     const second = await initializeProject(projectDirectory);
     expect(second.configChanged).toBe(false);
     expect(second.created).toEqual([]);
-    expect(second.unchanged).toHaveLength(13);
+    expect(second.unchanged).toHaveLength(14);
   });
 
   it("reports a dry run without writing anything", async () => {
@@ -141,7 +142,7 @@ describe("project initialization", () => {
     const result = await initializeProject(projectDirectory, { dryRun: true });
 
     expect(result.dryRun).toBe(true);
-    expect(result.created).toHaveLength(13);
+    expect(result.created).toHaveLength(14);
     await expect(
       readFile(
         path.join(projectDirectory, "src/astro-cms.manifest.ts"),

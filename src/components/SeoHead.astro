@@ -1,0 +1,92 @@
+---
+import type { PageDocument, PageSearchVisibility } from "../cms/document-types";
+import {
+  resolvePageSeoMetadata,
+  type PageSeoDefaults,
+} from "../cms/seo-metadata";
+
+interface Props extends PageSeoDefaults {
+  document: PageDocument;
+  titleOverride?: string;
+  descriptionOverride?: string;
+  searchVisibility?: PageSearchVisibility;
+  canonical?: boolean;
+}
+
+const {
+  document,
+  titleOverride,
+  descriptionOverride,
+  searchVisibility,
+  canonical = true,
+  siteName,
+  titleTemplate,
+  locale,
+  defaultSocialImage,
+  defaultSocialImageAlt,
+  twitterSite,
+} = Astro.props;
+const seo = resolvePageSeoMetadata(document, {
+  site: Astro.site,
+  pathname: Astro.url.pathname,
+  titleOverride,
+  descriptionOverride,
+  searchVisibility,
+  canonical,
+  siteName,
+  titleTemplate,
+  locale,
+  defaultSocialImage,
+  defaultSocialImageAlt,
+  twitterSite,
+});
+---
+
+<title>{seo.title}</title>
+{seo.description && <meta name="description" content={seo.description} />}
+<meta name="robots" content={seo.robots} />
+{seo.canonicalUrl && <link rel="canonical" href={seo.canonicalUrl} />}
+
+<meta property="og:type" content={seo.openGraph.type} />
+<meta property="og:title" content={seo.openGraph.title} />
+{
+  seo.openGraph.description && (
+    <meta property="og:description" content={seo.openGraph.description} />
+  )
+}
+{seo.openGraph.url && <meta property="og:url" content={seo.openGraph.url} />}
+{
+  seo.openGraph.siteName && (
+    <meta property="og:site_name" content={seo.openGraph.siteName} />
+  )
+}
+{
+  seo.openGraph.locale && (
+    <meta property="og:locale" content={seo.openGraph.locale} />
+  )
+}
+{
+  seo.openGraph.image && (
+    <meta property="og:image" content={seo.openGraph.image} />
+  )
+}
+{
+  seo.openGraph.imageAlt && (
+    <meta property="og:image:alt" content={seo.openGraph.imageAlt} />
+  )
+}
+
+<meta name="twitter:card" content={seo.twitter.card} />
+<meta name="twitter:title" content={seo.twitter.title} />
+{
+  seo.twitter.description && (
+    <meta name="twitter:description" content={seo.twitter.description} />
+  )
+}
+{seo.twitter.site && <meta name="twitter:site" content={seo.twitter.site} />}
+{seo.twitter.image && <meta name="twitter:image" content={seo.twitter.image} />}
+{
+  seo.twitter.imageAlt && (
+    <meta name="twitter:image:alt" content={seo.twitter.imageAlt} />
+  )
+}

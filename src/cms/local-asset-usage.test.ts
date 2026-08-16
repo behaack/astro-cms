@@ -5,7 +5,6 @@ import path from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 
 import homeDocumentJson from "../../content/pages/home.json";
-import { requireNodeByType } from "./document-test-helpers";
 import { saveLocalImageUpload } from "./local-asset-store";
 import { listLocalImageAssetsWithUsage } from "./local-asset-usage";
 import { writeLocalPageDocument } from "./local-page-store";
@@ -54,13 +53,11 @@ describe("local image usage", () => {
     );
 
     const page = structuredClone(assertPageDocument(homeDocumentJson));
-    const stack = requireNodeByType(page, "Stack");
-    stack.children ??= [];
-    stack.children.push({
-      id: "page-image",
-      type: "Image",
-      props: { src: asset.publicPath, alt: "Campaign", aspect: "landscape" },
-    });
+    page.seo = {
+      schemaVersion: 1,
+      socialImage: asset.publicPath,
+      socialImageAlt: "Campaign social card",
+    };
     await writeLocalPageDocument(page, { contentDirectory });
     await createReusableTemplate(
       {

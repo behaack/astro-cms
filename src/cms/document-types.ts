@@ -22,11 +22,23 @@ export interface ComponentNode {
   children?: ComponentNode[];
 }
 
+export type PageSearchVisibility = "public" | "noindex";
+
+export interface PageSeoMetadata {
+  schemaVersion: 1;
+  title?: string;
+  description?: string;
+  socialImage?: string;
+  socialImageAlt?: string;
+  searchVisibility?: PageSearchVisibility;
+}
+
 export interface PageDocument {
   schemaVersion: 1;
   route: string;
   title: string;
   description?: string;
+  seo?: PageSeoMetadata;
   content: ComponentNode[];
 }
 

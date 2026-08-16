@@ -3,6 +3,12 @@
   "route": "/",
   "title": "Astro-CMS starter page",
   "description": "A safe starting point for native Astro visual editing.",
+  "seo": {
+    "schemaVersion": 1,
+    "title": "Native Astro pages, safely assembled",
+    "description": "A constrained visual editor for pages built from approved native Astro components.",
+    "searchVisibility": "public"
+  },
   "content": [
     {
       "id": "d7d0cc79-d825-499e-806b-22f1954e64f3",

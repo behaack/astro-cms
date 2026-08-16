@@ -17,8 +17,11 @@ if (!draft) {
 {
   draft ? (
     <BaseLayout
+      document={draft.document}
       title={`Live preview · ${draft.document.title}`}
       description={draft.document.description}
+      searchVisibility="noindex"
+      canonical={false}
     >
       <div
         data-astro-live-preview="server"
@@ -29,7 +32,11 @@ if (!draft) {
       </div>
     </BaseLayout>
   ) : (
-    <BaseLayout title="Preview expired · Astro-CMS">
+    <BaseLayout
+      title="Preview expired · Astro-CMS"
+      searchVisibility="noindex"
+      canonical={false}
+    >
       <main class="expired-preview">
         <h1>Preview unavailable</h1>
         <p>This temporary preview has expired. Refresh it from the editor.</p>

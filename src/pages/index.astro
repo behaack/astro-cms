@@ -6,7 +6,7 @@ import BaseLayout from "../layouts/BaseLayout.astro";
 const homeDocument = await readLocalPageDocument("/");
 ---
 
-<BaseLayout title={homeDocument.title} description={homeDocument.description}>
+<BaseLayout document={homeDocument}>
   <header class="prototype-notice">
     <p>
       <strong>Native Astro output.</strong> No editor runtime is loaded on this page.

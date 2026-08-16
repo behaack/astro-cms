@@ -62,6 +62,12 @@ describe("local page store", () => {
 
   it("serializes page and property keys deterministically", () => {
     const document = structuredClone(originalDocument);
+    document.seo = {
+      schemaVersion: 1,
+      description: "A deterministic search description.",
+      title: "A deterministic search title",
+      searchVisibility: "public",
+    };
     const heading = requireNodeByType(document, "Heading");
     heading.props = { level: 1, text: "Stable order" };
 
@@ -70,6 +76,9 @@ describe("local page store", () => {
 
     expect(source.indexOf('"level"', headingStart)).toBeLessThan(
       source.indexOf('"text"', headingStart),
+    );
+    expect(source.indexOf('"title"', source.indexOf('"seo"'))).toBeLessThan(
+      source.indexOf('"description"', source.indexOf('"seo"')),
     );
     expect(source.endsWith("\n")).toBe(true);
     expect(serializePageDocument(JSON.parse(source))).toBe(source);

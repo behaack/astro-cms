@@ -34,6 +34,7 @@ const TEMPLATE_FILES = [
   ["components/Text.astro", "src/components/cms/Text.astro"],
   ["components/Image.astro", "src/components/cms/Image.astro"],
   ["components/Button.astro", "src/components/cms/Button.astro"],
+  ["components/AstroCmsSeoHead.astro", "src/components/AstroCmsSeoHead.astro"],
   [
     "layouts/AstroCmsPreviewLayout.astro",
     "src/layouts/AstroCmsPreviewLayout.astro",

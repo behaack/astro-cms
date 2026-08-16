@@ -3,6 +3,12 @@
   "route": "/",
   "title": "Astro-CMS Feasibility Prototype",
   "description": "Native Astro components rendered from a neutral component document.",
+  "seo": {
+    "schemaVersion": 1,
+    "title": "Constrained visual editing for native Astro sites",
+    "description": "Marketing teams assemble pages from approved native Astro components while developers retain control of responsive design.",
+    "searchVisibility": "public"
+  },
   "content": [
     {
       "id": "a4bd8876-eca8-4349-99b9-513a354866db",

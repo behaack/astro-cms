@@ -10,8 +10,11 @@ const editorUrl = `/admin?page=${encodeURIComponent(pageDocument.route)}`;
 ---
 
 <PreviewLayout
+  document={pageDocument}
   title={`Preview · ${pageDocument.title}`}
   description={pageDocument.description}
+  searchVisibility="noindex"
+  canonical={false}
 >
   <header class="astro-cms-preview-notice">
     <p><strong>Astro preview.</strong> Editor boundaries are enabled.</p>

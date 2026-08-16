@@ -7,7 +7,7 @@ import SiteLayout from "../layouts/SiteLayout.astro";
 const homeDocument = await readLocalPageDocument("/");
 ---
 
-<SiteLayout title={homeDocument.title} description={homeDocument.description}>
+<SiteLayout document={homeDocument}>
   <header class="site-header">
     <strong>Independent adoption fixture</strong>
     {import.meta.env.DEV && <a href="/admin">Edit this page</a>}

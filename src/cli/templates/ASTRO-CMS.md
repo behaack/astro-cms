@@ -28,6 +28,20 @@ because `injectRoutes` is set to `"dev-only"`.
 5. Keep `injectRoutes: "dev-only"` unless production editor routes are protected
    by authentication, authorization, durable storage, and multi-user isolation.
 
+## Page metadata
+
+`src/components/AstroCmsSeoHead.astro` is an adopter-owned native Astro
+component. It renders one title, description, robots policy, Open Graph set,
+and Twitter/X card set from the page document. Keep it in the real production
+layout and adapt its site defaults to the website's brand.
+
+The optional versioned `seo` object in a page document can override the legacy
+top-level title and description, select a social image with required alternative
+text, and constrain search visibility to `public` or `noindex`. Existing page
+documents remain valid and public by default. Add Astro's `site` configuration
+to produce absolute canonical and social-image URLs; without it, the component
+deliberately omits a canonical URL rather than guessing the deployed domain.
+
 ## Project images
 
 The starter Image component uses `/astro-cms-placeholder.svg`. During local
@@ -67,6 +81,7 @@ Commit the initialized website once before using **Review & publish**:
 
 ```bash
 git add astro.config.mjs src/astro-cms.manifest.ts src/components/cms \
+  src/components/AstroCmsSeoHead.astro \
   src/layouts/AstroCmsPreviewLayout.astro src/pages/astro-cms-demo.astro \
   src/pages/astro-cms-demo \
   public/astro-cms-placeholder.svg content/pages/home.json ASTRO-CMS.md

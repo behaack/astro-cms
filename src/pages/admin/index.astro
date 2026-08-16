@@ -11,7 +11,11 @@ const pageDocument = await readLocalPageDocument(requestedRoute);
 const pages = await listLocalPageDocuments();
 ---
 
-<BaseLayout title="Editor Scaffold · Astro-CMS">
+<BaseLayout
+  title="Editor Scaffold · Astro-CMS"
+  searchVisibility="noindex"
+  canonical={false}
+>
   <EditorApp
     initialDocument={pageDocument}
     initialPages={pages}

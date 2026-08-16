@@ -9,8 +9,11 @@ const editorUrl = `/admin?page=${encodeURIComponent(pageDocument.route)}`;
 ---
 
 <BaseLayout
+  document={pageDocument}
   title={`Preview · ${pageDocument.title}`}
   description={pageDocument.description}
+  searchVisibility="noindex"
+  canonical={false}
 >
   <header class="prototype-notice">
     <p>

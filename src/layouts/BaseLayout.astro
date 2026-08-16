@@ -1,15 +1,32 @@
 ---
 import "../styles/global.css";
+import SeoHead from "../components/SeoHead.astro";
+import type { PageDocument, PageSearchVisibility } from "../cms/document-types";
 
 interface Props {
-  title: string;
+  document?: PageDocument;
+  title?: string;
   description?: string;
+  searchVisibility?: PageSearchVisibility;
+  canonical?: boolean;
 }
 
 const {
+  document,
   title,
-  description = "An Astro-native visual composition feasibility prototype.",
+  description,
+  searchVisibility,
+  canonical = true,
 } = Astro.props;
+const headDocument: PageDocument =
+  document ??
+  ({
+    schemaVersion: 1,
+    route: Astro.url.pathname,
+    title: title ?? "Astro-CMS",
+    ...(description ? { description } : {}),
+    content: [],
+  } satisfies PageDocument);
 ---
 
 <!doctype html>
@@ -17,9 +34,16 @@ const {
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width" />
-    <meta name="description" content={description} />
+    <SeoHead
+      document={headDocument}
+      titleOverride={document ? title : undefined}
+      descriptionOverride={document ? description : undefined}
+      searchVisibility={searchVisibility}
+      canonical={canonical}
+      siteName="Astro-CMS"
+      locale="en_US"
+    />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <title>{title}</title>
   </head>
   <body>
     <div class="site-shell">

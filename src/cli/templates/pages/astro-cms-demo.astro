@@ -7,9 +7,6 @@ import AstroCmsPreviewLayout from "../layouts/AstroCmsPreviewLayout.astro";
 const document = await readLocalPageDocument("/");
 ---
 
-<AstroCmsPreviewLayout
-  title={document.title}
-  description={document.description}
->
+<AstroCmsPreviewLayout document={document}>
   <DocumentRenderer document={document} />
 </AstroCmsPreviewLayout>

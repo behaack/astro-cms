@@ -147,6 +147,28 @@ export function serializePageDocument(input: unknown): string {
     ...(document.description === undefined
       ? {}
       : { description: document.description }),
+    ...(document.seo === undefined
+      ? {}
+      : {
+          seo: {
+            schemaVersion: document.seo.schemaVersion,
+            ...(document.seo.title === undefined
+              ? {}
+              : { title: document.seo.title }),
+            ...(document.seo.description === undefined
+              ? {}
+              : { description: document.seo.description }),
+            ...(document.seo.socialImage === undefined
+              ? {}
+              : { socialImage: document.seo.socialImage }),
+            ...(document.seo.socialImageAlt === undefined
+              ? {}
+              : { socialImageAlt: document.seo.socialImageAlt }),
+            ...(document.seo.searchVisibility === undefined
+              ? {}
+              : { searchVisibility: document.seo.searchVisibility }),
+          },
+        }),
     content: document.content.map((node) => orderedNode(node)),
   };
   return `${JSON.stringify(orderedDocument, null, 2)}\n`;

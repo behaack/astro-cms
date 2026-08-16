@@ -1,6 +1,10 @@
 import { componentDefinitions } from "./component-definitions";
 import { rootAllowedChildren } from "./composition";
-import { componentNodeSchema, pageDocumentSchema } from "./document-schema";
+import {
+  componentNodeSchema,
+  isSafeImageSource,
+  pageDocumentSchema,
+} from "./document-schema";
 import type {
   ComponentNode,
   PageDocument,
@@ -19,17 +23,6 @@ function isSafeUrl(value: string): boolean {
   try {
     const url = new URL(value);
     return ["http:", "https:", "mailto:", "tel:"].includes(url.protocol);
-  } catch {
-    return false;
-  }
-}
-
-function isSafeImageSource(value: string): boolean {
-  if (value.startsWith("/") && !value.startsWith("//")) return true;
-
-  try {
-    const url = new URL(value);
-    return ["http:", "https:"].includes(url.protocol);
   } catch {
     return false;
   }

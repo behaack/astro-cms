@@ -4,7 +4,7 @@ import { lstat, readFile, realpath } from "node:fs/promises";
 import path from "node:path";
 
 import { componentDefinitions } from "./component-definitions";
-import { referencedImagePaths } from "./asset-references";
+import { referencedPageImagePaths } from "./asset-references";
 import type {
   ComponentNode,
   PageDocument,
@@ -268,7 +268,7 @@ async function gitAssetContexts(
   const publicDirectory =
     options.publicDirectory ?? path.join(projectDirectory, "public");
 
-  for (const publicPath of referencedImagePaths(document.content).filter(
+  for (const publicPath of referencedPageImagePaths(document).filter(
     (candidate) => candidate.startsWith("/uploads/"),
   )) {
     let filePath: string | undefined;
@@ -414,6 +414,22 @@ function semanticChanges(
     changes.push({
       kind: "page",
       summary: `Changed the page description from ${displayValue(before.description)} to ${displayValue(after.description)}.`,
+    });
+  }
+  const seoFields = [
+    { key: "title", label: "search title" },
+    { key: "description", label: "search description" },
+    { key: "socialImage", label: "social image" },
+    { key: "socialImageAlt", label: "social image alternative text" },
+    { key: "searchVisibility", label: "search visibility" },
+  ] as const;
+  for (const field of seoFields) {
+    const oldValue = before.seo?.[field.key];
+    const newValue = after.seo?.[field.key];
+    if (oldValue === newValue) continue;
+    changes.push({
+      kind: "page",
+      summary: `Changed the ${field.label} from ${displayValue(oldValue)} to ${displayValue(newValue)}.`,
     });
   }
 

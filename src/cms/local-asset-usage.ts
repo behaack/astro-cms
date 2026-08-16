@@ -1,4 +1,7 @@
-import { referencedImagePaths } from "./asset-references";
+import {
+  referencedImagePaths,
+  referencedPageImagePaths,
+} from "./asset-references";
 import type { PageDocument } from "./document-types";
 import {
   listLocalImageAssets,
@@ -52,7 +55,7 @@ async function referenceOwners(
         id: page.route,
         label: page.title,
       },
-      paths: referencedImagePaths(page.content),
+      paths: referencedPageImagePaths(page),
     })),
     ...templates.map((template) => ({
       usage: {
@@ -67,7 +70,7 @@ async function referenceOwners(
     const savedOwner = owners.find(
       ({ usage }) => usage.kind === "page" && usage.id === draft.route,
     );
-    const draftPaths = referencedImagePaths(draft.content).filter(
+    const draftPaths = referencedPageImagePaths(draft).filter(
       (publicPath) => !savedOwner?.paths.includes(publicPath),
     );
     if (draftPaths.length > 0) {
