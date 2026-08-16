@@ -36,6 +36,15 @@
               }
             },
             {
+              "id": "ce34926f-03fa-4a49-a2d7-b95c211671f9",
+              "type": "Image",
+              "props": {
+                "src": "/astro-cms-placeholder.svg",
+                "alt": "Abstract geometric component grid",
+                "aspect": "landscape"
+              }
+            },
+            {
               "id": "7b16774a-8533-4df7-a52f-458122e4d684",
               "type": "Button",
               "props": {

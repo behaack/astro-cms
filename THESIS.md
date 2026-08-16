@@ -26,6 +26,7 @@
 | Safe existing-project initialization              | Pass   | The archive-installed `astro-cms init` command preserved an existing Astro page and integration configuration, created a native-component starter, became a no-op on its second run, and produced a checked static build without `/admin`.                |
 | Reviewable Git publishing                         | Pass   | A saved page was compared with its committed baseline, summarized in plain language, built, and committed from the archive-installed editor. The commit contained only the page file; stale/staged conflicts and build rollback are covered by tests.     |
 | Route-backed multi-page workflow                  | Pass   | Browser testing created `/campaigns/summer`, switched pages, assembled it through the native Astro canvas, saved it to a deterministic nested file, published only that new file, and built its public static route.                                      |
+| Safe project-image selection                      | Pass   | The editor discovered supported assets only below `public`, selected one through an Image property, and rerendered the native Astro preview. Required alternative text and image-safe protocols are enforced by document validation.                      |
 
 ## Browser proof workflow
 
@@ -47,6 +48,7 @@
 16. Installed the archive into a bare Astro project, ran its packaged initializer twice, edited the generated page through `/admin`, confirmed exact preview and durable save, and built the generated static site without editor routes.
 17. Initialized Git in that generated project, saved a heading change, reviewed its semantic and technical diff, published commit `c394502`, and verified that the commit contained only the page while the clean production artifact contained the change and omitted `/admin`.
 18. Created `/campaigns/summer` from the editor, assembled and exactly previewed **Summer starts here**, published commit `7934576` containing only its nested page document, and verified the generated public route while `/admin` remained absent from production.
+19. Added an Image component, opened the project-image chooser, selected `/favicon.svg`, and verified the exact Astro iframe rerendered that source with no console errors while asset traversal and image validation remained constrained.
 
 ## What this resolves
 
@@ -56,7 +58,7 @@ The architecture is capable of delivering the intended constrained page-building
 
 - That an unfamiliar marketing user finds the current prototype intuitive without observation or training.
 - Publishing to a package registry, a stable versioned API, migrations, nonstandard/computed Astro config support, or compatibility across multiple Astro versions.
-- Remote Git push or pull requests, hosted deployment, authentication, multi-user concurrency, approvals, media management, or page rename/deletion policy.
+- Remote Git push or pull requests, hosted deployment, authentication, multi-user concurrency, approvals, image upload/optimization, full media management, or page rename/deletion policy.
 - Commercial demand for a managed product.
 
 These are distribution and product-validation questions. They no longer block the architectural thesis.

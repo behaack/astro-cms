@@ -65,7 +65,8 @@ pnpm exec astro-cms init
 The initializer creates:
 
 - `src/astro-cms.manifest.ts`
-- five native components in `src/components/cms`
+- six native components in `src/components/cms`, including a safe Image primitive
+- `public/astro-cms-placeholder.svg` as a visible starter asset
 - `src/layouts/AstroCmsPreviewLayout.astro`
 - the isolated `src/pages/astro-cms-demo.astro` route
 - `src/pages/astro-cms-demo/[...path].astro` for additional page documents
@@ -150,9 +151,9 @@ public page loaded no client scripts or editor markers, and `/admin` returned
 404 in production.
 
 The same archive command was browser-tested after initialization: the generated
-editor loaded its five starter components, an edited heading appeared in the
-exact Astro preview, saving persisted the change, and the generated public page
-rendered it after navigation with no console errors.
+editor loaded its six starter components, exposed the site's public images,
+rendered a selected asset through the exact Astro preview, persisted an edited
+heading, and rendered the generated public page with no console errors.
 
 The archive-installed editor was also tested through the complete Git loop. A
 saved heading change produced a semantic review, an exact page-only commit, and
@@ -165,5 +166,5 @@ build still omitted `/admin`, and the repository was clean afterward.
 This proves archive distribution, safe initialization, and local Git publishing
 for conventional Astro projects. It does not prove registry publishing,
 semantic-version compatibility, migrations, remote push/deployment policy,
-page rename/deletion policy, nonstandard/computed config modification, or
-support across multiple Astro versions.
+page rename/deletion policy, image upload/optimization, nonstandard/computed
+config modification, or support across multiple Astro versions.

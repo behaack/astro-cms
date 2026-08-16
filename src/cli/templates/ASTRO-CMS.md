@@ -28,6 +28,15 @@ because `injectRoutes` is set to `"dev-only"`.
 5. Keep `injectRoutes: "dev-only"` unless production editor routes are protected
    by authentication, authorization, durable storage, and multi-user isolation.
 
+## Project images
+
+The starter Image component uses `/astro-cms-placeholder.svg`. During local
+development, selecting an Image exposes **Choose from project images**, which
+lists supported image files below this website's `public` directory. Add or
+manage source assets through the project's normal developer workflow; the
+editor does not upload, replace, optimize, or delete files yet. Alternative text
+is required before a page can be saved or published.
+
 ## Enable Git publishing
 
 The editor reviews the selected page against the current Git commit (or marks a
@@ -41,7 +50,7 @@ Commit the initialized website once before using **Review & publish**:
 git add astro.config.mjs src/astro-cms.manifest.ts src/components/cms \
   src/layouts/AstroCmsPreviewLayout.astro src/pages/astro-cms-demo.astro \
   src/pages/astro-cms-demo \
-  content/pages/home.json ASTRO-CMS.md
+  public/astro-cms-placeholder.svg content/pages/home.json ASTRO-CMS.md
 git commit -m "chore: add Astro-CMS starter"
 ```
 

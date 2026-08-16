@@ -139,4 +139,37 @@ describe("Astro-CMS page documents", () => {
       message: "Heading.level must use an approved option.",
     });
   });
+
+  it("requires accessible images and rejects non-image URL protocols", () => {
+    const issues = validatePageDocument({
+      schemaVersion: 1,
+      route: "/unsafe-image",
+      title: "Unsafe image",
+      content: [
+        {
+          id: "section-image",
+          type: "Section",
+          props: { tone: "plain", width: "wide" },
+          children: [
+            {
+              id: "image-unsafe",
+              type: "Image",
+              props: {
+                src: "mailto:tracking@example.com",
+                alt: "",
+                aspect: "landscape",
+              },
+            },
+          ],
+        },
+      ],
+    });
+
+    expect(issues.map((issue) => issue.message)).toEqual(
+      expect.arrayContaining([
+        "Image.src must be a safe relative, HTTP, or HTTPS image path.",
+        "Image.alt is required.",
+      ]),
+    );
+  });
 });

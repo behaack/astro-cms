@@ -19,5 +19,6 @@ describe("component manifest", () => {
     expect(componentDefinitions.Section.allowedChildren).toContain("Callout");
     expect(componentDefinitions.Stack.allowedChildren).toContain("Callout");
     expect(componentDefinitions.Callout.allowedChildren).toEqual([]);
+    expect(componentDefinitions.Image.properties.src.type).toBe("image");
   });
 });

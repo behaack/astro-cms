@@ -237,6 +237,13 @@ export default function EditorApp({
         >
           <h2>Settings</h2>
           <div id="cms-properties" />
+          <section id="image-asset-tools" className="image-asset-tools" hidden>
+            <h3>Project image</h3>
+            <p id="active-image-path" />
+            <button id="open-image-assets" type="button">
+              Choose from project images
+            </button>
+          </section>
           <div className="validation-card">
             <h2>Page check</h2>
             <p id="cms-validation">Checking page…</p>
@@ -312,6 +319,28 @@ export default function EditorApp({
             Create page
           </button>
         </div>
+      </dialog>
+
+      <dialog id="asset-picker-dialog" className="asset-picker-dialog">
+        <div className="publish-review-dialog__header">
+          <div>
+            <p className="eyebrow">Project images</p>
+            <h2>Choose an image</h2>
+          </div>
+          <button id="close-asset-picker" type="button">
+            Cancel
+          </button>
+        </div>
+        <p>
+          These images come from the website's public folder. Choosing one
+          changes only the selected component's approved image path.
+        </p>
+        <div
+          id="asset-picker-list"
+          className="asset-picker-list"
+          aria-label="Available project images"
+        />
+        <p id="asset-picker-status" aria-live="polite" />
       </dialog>
 
       <details className="document-panel">

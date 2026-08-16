@@ -522,7 +522,20 @@
   box-shadow: 0 1.5rem 4rem rgb(20 35 30 / 28%);
 }
 
-.create-page-dialog::backdrop {
+.asset-picker-dialog {
+  width: min(58rem, calc(100vw - 2rem));
+  max-height: calc(100vh - 2rem);
+  padding: 1.25rem;
+  overflow: auto;
+  border: 1px solid #92ab9f;
+  border-radius: 0.75rem;
+  color: #17201d;
+  background: #fff;
+  box-shadow: 0 1.5rem 4rem rgb(20 35 30 / 28%);
+}
+
+.create-page-dialog::backdrop,
+.asset-picker-dialog::backdrop {
   background: rgb(20 35 30 / 62%);
 }
 
@@ -585,7 +598,9 @@
 }
 
 .publish-review-dialog button,
-.create-page-dialog button {
+.create-page-dialog button,
+.asset-picker-dialog button,
+.image-asset-tools button {
   padding: 0.65rem 0.9rem;
   border: 1px solid #92ab9f;
   border-radius: 0.5rem;
@@ -603,7 +618,8 @@
 }
 
 .publish-review-dialog button:disabled,
-.create-page-dialog button:disabled {
+.create-page-dialog button:disabled,
+.asset-picker-dialog button:disabled {
   cursor: not-allowed;
   opacity: 0.5;
 }
@@ -660,6 +676,67 @@
 
 .publish-review-dialog__actions {
   justify-content: flex-end;
+}
+
+.image-asset-tools {
+  margin-top: 0.9rem;
+  padding: 0.85rem;
+  border: 1px solid #cbd7d0;
+  border-radius: 0.6rem;
+  background: #f5f8f6;
+}
+
+.image-asset-tools h3,
+.image-asset-tools p {
+  margin: 0 0 0.55rem;
+}
+
+.image-asset-tools p {
+  overflow-wrap: anywhere;
+  color: #476158;
+  font-size: 0.78rem;
+}
+
+.asset-picker-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(10rem, 1fr));
+  gap: 0.8rem;
+  margin-top: 1rem;
+}
+
+.asset-picker-card {
+  display: grid;
+  gap: 0.55rem;
+  min-width: 0;
+  padding: 0.65rem;
+  text-align: left;
+}
+
+.asset-picker-card img {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  display: block;
+  object-fit: contain;
+  border-radius: 0.4rem;
+  background: #edf3ef;
+}
+
+.asset-picker-card span,
+.asset-picker-card code {
+  overflow-wrap: anywhere;
+}
+
+.asset-picker-card span {
+  font-weight: 700;
+}
+
+.asset-picker-card code {
+  color: #476158;
+  font-size: 0.72rem;
+}
+
+#asset-picker-status[data-state="error"] {
+  color: #a2392b;
 }
 
 @media (max-width: 1000px) {

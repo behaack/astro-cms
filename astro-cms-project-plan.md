@@ -890,7 +890,7 @@ The generated surface is sufficient to answer the adoption question:
 1. A developer can preview the full file plan with `astro-cms init --dry-run`.
 2. A conventional existing config retains its current properties and integrations.
 3. The existing home page remains untouched.
-4. Five native `.astro` components, their safe manifest, an exact-preview layout, neutral JSON content, and a separate demo route work immediately.
+4. Six native `.astro` components, their safe manifest, a starter public image, an exact-preview layout, neutral JSON content, and a separate demo route work immediately.
 5. Additional route-backed documents build through the generated nested demo route without adding an editor runtime to production.
 6. Running the initializer again makes no changes.
 7. The initialized site type-checks and builds with no production editor route.
@@ -901,7 +901,9 @@ This removes manual scaffolding as the next technical adoption blocker. The next
 
 - Integrate Astro Content Collections.
 - Add collection forms.
-- Add image browsing and upload.
+- **Implemented:** read-only browsing of supported project images below `public`, selected through manifest-declared Image properties.
+- **Implemented:** required alternative text and image-specific safe-source validation.
+- Add image upload, replacement, optimization, metadata editing, and usage reporting.
 - Add asset validation and usage reporting.
 
 ### Phase 4 — Git Publishing

@@ -109,7 +109,7 @@ export const componentManifest = {
     allowedParents: ["Section", "Stack"],
     properties: {
       src: {
-        type: "url",
+        type: "image",
         label: "Image path",
         required: true,
         defaultValue: "/abstract-grid.svg",

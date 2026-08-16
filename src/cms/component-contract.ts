@@ -1,6 +1,7 @@
 export type PropertyValue = string | number | boolean | null;
 
-export type PropertyControlType = "text" | "url" | "boolean" | "select";
+export type PropertyControlType =
+  "text" | "url" | "image" | "boolean" | "select";
 
 export type ComponentCategory = "Layout" | "Content" | "Action";
 

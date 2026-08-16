@@ -94,6 +94,35 @@ export const componentManifest = {
       },
     },
   },
+  Image: {
+    label: "Image",
+    category: "Content",
+    acceptsChildren: false,
+    allowedParents: ["Section", "Stack"],
+    properties: {
+      src: {
+        type: "image",
+        label: "Image path",
+        required: true,
+        defaultValue: "/astro-cms-placeholder.svg",
+      },
+      alt: {
+        type: "text",
+        label: "Alternative text",
+        required: true,
+        defaultValue: "Abstract geometric illustration",
+      },
+      aspect: {
+        type: "select",
+        label: "Aspect ratio",
+        defaultValue: "landscape",
+        options: [
+          { id: "landscape", label: "Landscape" },
+          { id: "square", label: "Square" },
+        ],
+      },
+    },
+  },
   Button: {
     label: "Button",
     category: "Action",

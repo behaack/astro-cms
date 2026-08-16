@@ -32,6 +32,7 @@ const TEMPLATE_FILES = [
   ["components/Stack.astro", "src/components/cms/Stack.astro"],
   ["components/Heading.astro", "src/components/cms/Heading.astro"],
   ["components/Text.astro", "src/components/cms/Text.astro"],
+  ["components/Image.astro", "src/components/cms/Image.astro"],
   ["components/Button.astro", "src/components/cms/Button.astro"],
   [
     "layouts/AstroCmsPreviewLayout.astro",
@@ -43,6 +44,7 @@ const TEMPLATE_FILES = [
     "src/pages/astro-cms-demo/[...path].astro",
   ],
   ["content/home.json", "content/pages/home.json"],
+  ["public/astro-cms-placeholder.svg", "public/astro-cms-placeholder.svg"],
   ["ASTRO-CMS.md", "ASTRO-CMS.md"],
 ];
 

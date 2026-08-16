@@ -24,6 +24,17 @@ function isSafeUrl(value: string): boolean {
   }
 }
 
+function isSafeImageSource(value: string): boolean {
+  if (value.startsWith("/") && !value.startsWith("//")) return true;
+
+  try {
+    const url = new URL(value);
+    return ["http:", "https:"].includes(url.protocol);
+  } catch {
+    return false;
+  }
+}
+
 function propertyIssue(
   property: PropertyDefinition,
   value: PropertyValue,
@@ -42,6 +53,9 @@ function propertyIssue(
   if (typeof value !== "string") return "must be text";
   if (property.type === "url" && !isSafeUrl(value)) {
     return "must be a safe relative, HTTP, HTTPS, mail, or telephone URL";
+  }
+  if (property.type === "image" && !isSafeImageSource(value)) {
+    return "must be a safe relative, HTTP, or HTTPS image path";
   }
 
   return undefined;

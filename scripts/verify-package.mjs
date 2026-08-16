@@ -170,8 +170,10 @@ for (const requiredPath of [
   "src/cms/git-publisher.ts",
   "src/components/renderer/DocumentRenderer.astro",
   "src/pages/api/change-review.ts",
+  "src/pages/api/assets.ts",
   "src/pages/api/pages.ts",
   "src/pages/api/publish.ts",
+  "src/cms/local-asset-store.ts",
 ]) {
   if (!(await pathExists(path.join(installedPackageDirectory, requiredPath)))) {
     throw new Error(`Required package file is missing: ${requiredPath}`);
@@ -318,8 +320,11 @@ for (const generatedPath of [
   "src/astro-cms.manifest.ts",
   "src/pages/astro-cms-demo.astro",
   "src/pages/astro-cms-demo/[...path].astro",
+  "src/components/cms/Image.astro",
+  "public/astro-cms-placeholder.svg",
   "content/pages/home.json",
   "dist/astro-cms-demo/index.html",
+  "dist/astro-cms-placeholder.svg",
 ]) {
   if (!(await pathExists(path.join(initializerDirectory, generatedPath)))) {
     throw new Error(`Initializer output is missing: ${generatedPath}`);

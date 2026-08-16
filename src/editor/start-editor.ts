@@ -329,6 +329,23 @@ const newPageDescriptionInput = document.querySelector<HTMLTextAreaElement>(
 const createPageStatus = document.querySelector<HTMLElement>(
   "#create-page-status",
 );
+const imageAssetTools =
+  document.querySelector<HTMLElement>("#image-asset-tools");
+const activeImagePath =
+  document.querySelector<HTMLElement>("#active-image-path");
+const openImageAssetsButton =
+  document.querySelector<HTMLButtonElement>("#open-image-assets");
+const assetPickerDialog = document.querySelector<HTMLDialogElement>(
+  "#asset-picker-dialog",
+);
+const closeAssetPickerButton = document.querySelector<HTMLButtonElement>(
+  "#close-asset-picker",
+);
+const assetPickerList =
+  document.querySelector<HTMLElement>("#asset-picker-list");
+const assetPickerStatus = document.querySelector<HTMLElement>(
+  "#asset-picker-status",
+);
 
 let activeComponent: Component | null = null;
 let lastDeletedCmsId: string | undefined;
@@ -339,6 +356,7 @@ let reusableTemplateControls: ReusableTemplateControls | undefined;
 let activeChangeReview: ChangeReview | undefined;
 let reviewedDocument: PageDocument | undefined;
 let savedDocumentSource = JSON.stringify(initialDocument);
+let activeImagePropertyName: string | undefined;
 
 const PALETTE_DRAG_MIME = "application/x-astro-cms-component";
 const COMPONENT_DRAG_MIME = "application/x-astro-cms-node";
@@ -382,6 +400,18 @@ interface PublishResponse extends PageDocumentResponse {
 }
 
 interface CreatePageResponse extends PageDocumentResponse {}
+
+interface ImageAsset {
+  publicPath: string;
+  fileName: string;
+  extension: string;
+}
+
+interface ImageAssetsResponse {
+  ok: boolean;
+  assets?: ImageAsset[];
+  message?: string;
+}
 
 interface InsertionPoint {
   parent: Component;
@@ -456,6 +486,73 @@ function setPublishReviewStatus(
   if (!publishReviewStatus) return;
   publishReviewStatus.textContent = message;
   publishReviewStatus.dataset.state = state;
+}
+
+function setAssetPickerStatus(
+  message: string,
+  state: "neutral" | "error" = "neutral",
+): void {
+  if (!assetPickerStatus) return;
+  assetPickerStatus.textContent = message;
+  assetPickerStatus.dataset.state = state;
+}
+
+async function loadImageAssets(): Promise<void> {
+  if (!assetPickerList) return;
+  assetPickerList.replaceChildren();
+  setAssetPickerStatus("Loading project images…");
+
+  try {
+    const response = await fetch("/api/assets", { cache: "no-store" });
+    const result = (await response.json()) as ImageAssetsResponse;
+    if (!response.ok || !result.ok || !result.assets) {
+      throw new Error(result.message ?? "Project images could not be loaded.");
+    }
+
+    if (result.assets.length === 0) {
+      setAssetPickerStatus(
+        "No images were found in this website's public folder.",
+      );
+      return;
+    }
+
+    for (const asset of result.assets) {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "asset-picker-card";
+      button.setAttribute("aria-label", `Use ${asset.fileName}`);
+
+      const image = document.createElement("img");
+      image.src = asset.publicPath;
+      image.alt = "";
+      image.loading = "lazy";
+
+      const name = document.createElement("span");
+      name.textContent = asset.fileName;
+      const publicPath = document.createElement("code");
+      publicPath.textContent = asset.publicPath;
+      button.append(image, name, publicPath);
+      button.addEventListener("click", () => {
+        if (!activeComponent || !activeImagePropertyName) return;
+        activeComponent.set(activeImagePropertyName, asset.publicPath);
+        updateImageAssetTools();
+        refreshDocumentOutput();
+        setCompositionStatus(`${asset.fileName} selected.`, "success");
+        assetPickerDialog?.close();
+      });
+      assetPickerList.append(button);
+    }
+    setAssetPickerStatus(
+      `${result.assets.length} project image${result.assets.length === 1 ? "" : "s"} available.`,
+    );
+  } catch (error) {
+    setAssetPickerStatus(
+      error instanceof Error
+        ? error.message
+        : "Project images could not be loaded.",
+      "error",
+    );
+  }
 }
 
 function showChangeReview(review: ChangeReview): void {
@@ -534,6 +631,33 @@ function activeCmsId(): string | undefined {
   return value ? String(value) : undefined;
 }
 
+function updateImageAssetTools(): void {
+  activeImagePropertyName = undefined;
+  if (!imageAssetTools || !activeComponent || activeComponent === wrapper) {
+    if (imageAssetTools) imageAssetTools.hidden = true;
+    return;
+  }
+
+  const componentType = componentTypeOf(activeComponent);
+  const imageProperty = componentType
+    ? Object.entries(componentDefinitions[componentType].properties).find(
+        ([, property]) => property.type === "image",
+      )
+    : undefined;
+  if (!imageProperty) {
+    imageAssetTools.hidden = true;
+    return;
+  }
+
+  activeImagePropertyName = imageProperty[0];
+  imageAssetTools.hidden = false;
+  if (activeImagePath) {
+    activeImagePath.textContent = String(
+      activeComponent.get(activeImagePropertyName) ?? "No image selected",
+    );
+  }
+}
+
 function componentTreeLabel(component: Component): string {
   const type = componentTypeOf(component);
   if (!type) return "Page";
@@ -550,6 +674,7 @@ function selectComponent(component: Component): void {
   updateCompositionActions();
   reusableTemplateControls?.refreshSelection();
   syncLivePreviewSelection();
+  updateImageAssetTools();
 }
 
 function selectInitialComponent(): void {
@@ -1451,6 +1576,7 @@ editor.on("component:selected", (component: Component) => {
   renderCompositionTree();
   updateCompositionActions();
   syncLivePreviewSelection();
+  updateImageAssetTools();
 });
 editor.on("load", () => {
   selectInitialComponent();
@@ -1493,6 +1619,7 @@ function synchronizePropertyControl(event: Event): void {
   }
 
   activeComponent.set(propertyName, value);
+  updateImageAssetTools();
   refreshDocumentOutput();
 }
 
@@ -1819,6 +1946,16 @@ confirmCreatePageButton?.addEventListener("click", async () => {
     confirmCreatePageButton.disabled = false;
     if (cancelCreatePageButton) cancelCreatePageButton.disabled = false;
   }
+});
+
+openImageAssetsButton?.addEventListener("click", () => {
+  if (!activeImagePropertyName) return;
+  assetPickerDialog?.showModal();
+  void loadImageAssets();
+});
+
+closeAssetPickerButton?.addEventListener("click", () => {
+  assetPickerDialog?.close();
 });
 
 closePublishReviewButton?.addEventListener("click", () => {
