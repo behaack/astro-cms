@@ -242,30 +242,43 @@ export async function listLocalPageDocuments(
     });
 }
 
-export async function readAllLocalPageDocuments(
+export async function readAllLocalPageSnapshots(
   options: LocalPageStoreOptions = {},
-): Promise<PageDocument[]> {
+): Promise<LocalPageSnapshot[]> {
   const directory = contentDirectory(options);
   const files = await pageFiles(directory);
-  const documents = await Promise.all(
+  const snapshots = await Promise.all(
     files.map(async (relativeFile) => {
       const expectedRoute = routeForRelativePageFile(relativeFile);
-      const document = assertPageDocument(
-        JSON.parse(await readFile(path.join(directory, relativeFile), "utf8")),
-      );
+      const filePath = path.join(directory, relativeFile);
+      const source = await readFile(filePath, "utf8");
+      const document = assertPageDocument(JSON.parse(source));
       if (document.route !== expectedRoute) {
         throw new Error(
           `Page route ${document.route} does not match ${relativeFile.replaceAll("\\", "/")}.`,
         );
       }
-      return document;
+      return {
+        document,
+        source,
+        revision: pageSourceRevision(source),
+        filePath,
+      };
     }),
   );
-  return documents.sort((left, right) => {
-    if (left.route === "/") return -1;
-    if (right.route === "/") return 1;
-    return left.route.localeCompare(right.route);
+  return snapshots.sort((left, right) => {
+    if (left.document.route === "/") return -1;
+    if (right.document.route === "/") return 1;
+    return left.document.route.localeCompare(right.document.route);
   });
+}
+
+export async function readAllLocalPageDocuments(
+  options: LocalPageStoreOptions = {},
+): Promise<PageDocument[]> {
+  return (await readAllLocalPageSnapshots(options)).map(
+    (snapshot) => snapshot.document,
+  );
 }
 
 export async function createLocalPageDocument(

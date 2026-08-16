@@ -130,6 +130,41 @@ fails, the original bytes are restored. Unrelated staged files remain staged.
 Files elsewhere in `public`, symbolic links, and malformed upload paths cannot
 be removed through this endpoint.
 
+## Retire pages without breaking known links
+
+The editor never offers deletion for `/`. Before removing another route, it
+scans every saved page and reusable template for approved URL properties that
+target the route, including destinations with query strings or fragments. Any
+incoming link blocks removal and identifies the page or template that must be
+updated first. A page's own self-links do not block retiring that page.
+
+An untracked draft page is removed without creating a commit. A tracked page
+is removed only after a production build succeeds, then committed as an
+isolated deletion. Staged changes to the target page are refused, unrelated
+staged files are preserved, and the current page source is restored if the
+build or commit fails. Page publication, image removal, and page removal share
+one local operation lock so their builds and Git commits cannot overlap.
+
+## Rename pages and repair saved links
+
+**Rename page** is unavailable for `/` and refuses an existing or Git-tracked
+destination. The operation scans every saved page and reusable template using
+the adopting project's component manifest. Exact internal destinations in URL
+properties are changed to the new route while query strings and fragments are
+preserved; external URLs and longer child routes are left unchanged.
+
+When every affected file is untracked, the rename remains an unpublished local
+change and does not build or commit. If the source page or any rewritten file
+is tracked, Astro-CMS runs the production build and creates one isolated commit
+containing the old-path deletion, new-path document, and all link rewrites.
+Affected staged files are refused, unrelated staged files remain staged, and
+every changed source is restored if the build or commit fails. Rename shares
+the same local operation lock as publishing and removal.
+
+This link repair covers only content represented by the approved component
+contract. It does not create a redirect for external bookmarks, search engines,
+hand-written code, or content outside the page and template stores.
+
 ## Configure manually
 
 Configure Astro with the project's own manifest, native component directory,
@@ -185,5 +220,5 @@ build still omitted `/admin`, and the repository was clean afterward.
 This proves archive distribution, safe initialization, and local Git publishing
 for conventional Astro projects. It does not prove registry publishing,
 semantic-version compatibility, migrations, remote push/deployment policy,
-page rename/deletion policy, image replacement/optimization, nonstandard/computed
+external redirect policy, image replacement/optimization, nonstandard/computed
 config modification, or support across multiple Astro versions.

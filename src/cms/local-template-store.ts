@@ -22,6 +22,12 @@ export interface LocalTemplateStoreOptions {
   templateDirectory?: string;
 }
 
+export interface LocalTemplateSnapshot {
+  template: ReusableTemplate;
+  source: string;
+  filePath: string;
+}
+
 export class ReusableTemplateExistsError extends Error {}
 
 function templateDirectory(options: LocalTemplateStoreOptions): string {
@@ -31,8 +37,15 @@ function templateDirectory(options: LocalTemplateStoreOptions): string {
   );
 }
 
-function templatePath(id: string, options: LocalTemplateStoreOptions): string {
+export function localTemplateFilePath(
+  id: string,
+  options: LocalTemplateStoreOptions = {},
+): string {
   return path.join(templateDirectory(options), `${id}.json`);
+}
+
+export function serializeReusableTemplate(input: unknown): string {
+  return `${JSON.stringify(assertReusableTemplate(input), null, 2)}\n`;
 }
 
 export function templateIdForName(name: string): string {
@@ -63,6 +76,14 @@ function assertTemplateRoot(input: unknown): ComponentNode {
 export async function listReusableTemplates(
   options: LocalTemplateStoreOptions = {},
 ): Promise<ReusableTemplate[]> {
+  return (await listReusableTemplateSnapshots(options)).map(
+    (snapshot) => snapshot.template,
+  );
+}
+
+export async function listReusableTemplateSnapshots(
+  options: LocalTemplateStoreOptions = {},
+): Promise<LocalTemplateSnapshot[]> {
   const directory = templateDirectory(options);
   let files: string[];
 
@@ -73,17 +94,23 @@ export async function listReusableTemplates(
     throw error;
   }
 
-  const templates = await Promise.all(
+  const snapshots = await Promise.all(
     files
       .filter((file) => file.endsWith(".json"))
-      .map(async (file) =>
-        assertReusableTemplate(
-          JSON.parse(await readFile(path.join(directory, file), "utf8")),
-        ),
-      ),
+      .map(async (file) => {
+        const filePath = path.join(directory, file);
+        const source = await readFile(filePath, "utf8");
+        return {
+          template: assertReusableTemplate(JSON.parse(source)),
+          source,
+          filePath,
+        };
+      }),
   );
 
-  return templates.sort((left, right) => left.name.localeCompare(right.name));
+  return snapshots.sort((left, right) =>
+    left.template.name.localeCompare(right.template.name),
+  );
 }
 
 export async function createReusableTemplate(
@@ -99,7 +126,7 @@ export async function createReusableTemplate(
     name,
     root,
   });
-  const destination = templatePath(id, options);
+  const destination = localTemplateFilePath(id, options);
   const directory = path.dirname(destination);
 
   try {
@@ -119,7 +146,7 @@ export async function createReusableTemplate(
   await mkdir(directory, { recursive: true });
 
   try {
-    await writeFile(temporaryPath, `${JSON.stringify(template, null, 2)}\n`, {
+    await writeFile(temporaryPath, serializeReusableTemplate(template), {
       encoding: "utf8",
       flag: "wx",
     });

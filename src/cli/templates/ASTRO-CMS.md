@@ -32,17 +32,36 @@ because `injectRoutes` is set to `"dev-only"`.
 
 The starter Image component uses `/astro-cms-placeholder.svg`. During local
 development, selecting an Image exposes **Choose from project images**, which
-lists supported image files below this website's `public` directory. Add or
-manage source assets through the project's normal developer workflow; the
-editor does not upload, replace, optimize, or delete files yet. Alternative text
-is required before a page can be saved or published.
+lists supported image files below this website's `public` directory. Editors can
+upload verified PNG, JPEG, GIF, WebP, or AVIF files up to 8 MB. Astro-CMS stores
+them below `public/uploads`, reports where they are used, and removes them only
+when no saved page, reusable template, or active edit still references them.
+Developer-managed public assets remain protected. Alternative text is required
+before a page can be saved or published. Replacement and optimization remain
+part of the project's normal developer workflow.
+
+## Manage pages
+
+**Create page** adds route-backed documents without overwriting an existing
+path. **Rename page** is unavailable for `/`, refuses destination collisions,
+and updates exact internal destinations in saved pages and reusable templates,
+preserving their query strings and fragments. It does not create redirects for
+external bookmarks or links outside Astro-CMS content. **Remove page** is
+unavailable for `/` and refuses a page that is still
+linked from another saved page or reusable template. Unpublished pages are
+removed directly. Removing a published page runs the production build and
+creates an isolated Git deletion commit, restoring the page if the operation
+fails. A rename touching published content similarly builds and commits the
+move and all known link updates as one rollback-safe change.
 
 ## Enable Git publishing
 
 The editor reviews the selected page against the current Git commit (or marks a
 new page as added), creates a production build, and commits only that page's
-JSON file. It never pushes automatically and it preserves unrelated staged
-files.
+JSON file plus newly referenced uploads. Removing a tracked image or page also
+uses an isolated, build-verified commit. Renaming a route commits the page move
+and saved-link updates together. It never pushes automatically and it preserves
+unrelated staged files.
 
 Commit the initialized website once before using **Review & publish**:
 

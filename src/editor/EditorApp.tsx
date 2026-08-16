@@ -44,6 +44,30 @@ export default function EditorApp({
             <button id="open-create-page" type="button">
               Create page
             </button>
+            <button
+              id="open-rename-page"
+              type="button"
+              disabled={initialDocument.route === "/"}
+              title={
+                initialDocument.route === "/"
+                  ? "The homepage path cannot be renamed."
+                  : "Rename this page and update known internal links."
+              }
+            >
+              Rename page
+            </button>
+            <button
+              id="remove-page"
+              type="button"
+              disabled={initialDocument.route === "/"}
+              title={
+                initialDocument.route === "/"
+                  ? "The homepage cannot be deleted."
+                  : "Remove this page after checking incoming links."
+              }
+            >
+              Remove page
+            </button>
           </div>
         </div>
         <div className="toolbar-actions">
@@ -317,6 +341,45 @@ export default function EditorApp({
         <div className="publish-review-dialog__actions">
           <button id="confirm-create-page" type="button" data-primary="">
             Create page
+          </button>
+        </div>
+      </dialog>
+
+      <dialog id="rename-page-dialog" className="create-page-dialog">
+        <div className="publish-review-dialog__header">
+          <div>
+            <p className="eyebrow">Pages</p>
+            <h2>Rename this page</h2>
+          </div>
+          <button id="cancel-rename-page" type="button">
+            Cancel
+          </button>
+        </div>
+        <p>
+          Change the page path. Astro-CMS will update known links in saved pages
+          and reusable templates, then verify the production build.
+        </p>
+        <p>
+          Current path: <code>{initialDocument.route}</code>
+        </p>
+        <label htmlFor="renamed-page-path">New page path</label>
+        <div className="page-path-input">
+          <span aria-hidden="true">/</span>
+          <input
+            id="renamed-page-path"
+            type="text"
+            maxLength={160}
+            defaultValue={initialDocument.route.slice(1)}
+          />
+        </div>
+        <p className="page-operation-note">
+          This does not create a redirect for bookmarks or links outside this
+          project.
+        </p>
+        <p id="rename-page-status" aria-live="polite" />
+        <div className="publish-review-dialog__actions">
+          <button id="confirm-rename-page" type="button" data-primary="">
+            Rename page
           </button>
         </div>
       </dialog>

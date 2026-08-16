@@ -37,10 +37,16 @@
 
 .page-manager {
   display: grid;
-  grid-template-columns: auto minmax(12rem, 1fr) auto;
+  grid-template-columns: auto minmax(12rem, 1fr) auto auto auto;
   gap: 0.45rem;
   align-items: center;
   margin-top: 0.8rem;
+}
+
+.page-manager #remove-page:not(:disabled) {
+  border-color: #c8a19b;
+  color: #8f3025;
+  background: #fff7f5;
 }
 
 .page-manager label {
@@ -575,14 +581,21 @@
   border: 0;
 }
 
-#create-page-status {
+#create-page-status,
+#rename-page-status {
   min-height: 1.5rem;
   margin: 0.8rem 0;
   color: #52645c;
 }
 
-#create-page-status[data-state="error"] {
+#create-page-status[data-state="error"],
+#rename-page-status[data-state="error"] {
   color: #a2392b;
+}
+
+.page-operation-note {
+  color: #52645c;
+  font-size: 0.85rem;
 }
 
 .publish-review-dialog::backdrop {

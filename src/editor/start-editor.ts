@@ -310,6 +310,10 @@ const pageSwitcher =
   document.querySelector<HTMLSelectElement>("#page-switcher");
 const openCreatePageButton =
   document.querySelector<HTMLButtonElement>("#open-create-page");
+const openRenamePageButton =
+  document.querySelector<HTMLButtonElement>("#open-rename-page");
+const removePageButton =
+  document.querySelector<HTMLButtonElement>("#remove-page");
 const createPageDialog = document.querySelector<HTMLDialogElement>(
   "#create-page-dialog",
 );
@@ -328,6 +332,20 @@ const newPageDescriptionInput = document.querySelector<HTMLTextAreaElement>(
 );
 const createPageStatus = document.querySelector<HTMLElement>(
   "#create-page-status",
+);
+const renamePageDialog = document.querySelector<HTMLDialogElement>(
+  "#rename-page-dialog",
+);
+const cancelRenamePageButton = document.querySelector<HTMLButtonElement>(
+  "#cancel-rename-page",
+);
+const confirmRenamePageButton = document.querySelector<HTMLButtonElement>(
+  "#confirm-rename-page",
+);
+const renamedPagePathInput =
+  document.querySelector<HTMLInputElement>("#renamed-page-path");
+const renamePageStatus = document.querySelector<HTMLElement>(
+  "#rename-page-status",
 );
 const imageAssetTools =
   document.querySelector<HTMLElement>("#image-asset-tools");
@@ -408,6 +426,34 @@ interface PublishResponse extends PageDocumentResponse {
 }
 
 interface CreatePageResponse extends PageDocumentResponse {}
+
+interface PageRemovalResponse {
+  ok: boolean;
+  route?: string;
+  title?: string;
+  tracked?: boolean;
+  commit?: string;
+  shortCommit?: string;
+  message?: string;
+  usages?: Array<{
+    kind: "page" | "template";
+    id: string;
+    label: string;
+  }>;
+}
+
+interface PageRenameResponse {
+  ok: boolean;
+  fromRoute?: string;
+  toRoute?: string;
+  title?: string;
+  tracked?: boolean;
+  updatedLinks?: number;
+  updatedDocuments?: number;
+  commit?: string;
+  shortCommit?: string;
+  message?: string;
+}
 
 interface ImageAssetIdentity {
   publicPath: string;
@@ -726,6 +772,25 @@ function setCreatePageStatus(message: string, error = false): void {
   if (!createPageStatus) return;
   createPageStatus.textContent = message;
   createPageStatus.dataset.state = error ? "error" : "neutral";
+}
+
+function setRenamePageStatus(message: string, error = false): void {
+  if (!renamePageStatus) return;
+  renamePageStatus.textContent = message;
+  renamePageStatus.dataset.state = error ? "error" : "neutral";
+}
+
+function setPageOperationControlsDisabled(disabled: boolean): void {
+  if (pageSwitcher) pageSwitcher.disabled = disabled;
+  if (openCreatePageButton) openCreatePageButton.disabled = disabled;
+  if (openRenamePageButton) {
+    openRenamePageButton.disabled = disabled || initialDocument.route === "/";
+  }
+  if (removePageButton) {
+    removePageButton.disabled = disabled || initialDocument.route === "/";
+  }
+  if (saveProjectButton) saveProjectButton.disabled = disabled;
+  if (publishProjectButton) publishProjectButton.disabled = disabled;
 }
 
 function suggestedPagePath(title: string): string {
@@ -2026,6 +2091,113 @@ openCreatePageButton?.addEventListener("click", () => {
   setCreatePageStatus("");
   createPageDialog?.showModal();
   newPageTitleInput?.focus();
+});
+
+openRenamePageButton?.addEventListener("click", () => {
+  if (initialDocument.route === "/" || !renamedPagePathInput) return;
+  if (
+    hasUnsavedChanges() &&
+    !window.confirm(
+      "Rename this page? Unsaved editor changes will be discarded after the rename.",
+    )
+  ) {
+    return;
+  }
+  renamedPagePathInput.value = initialDocument.route.slice(1);
+  setRenamePageStatus("");
+  renamePageDialog?.showModal();
+  renamedPagePathInput.focus();
+  renamedPagePathInput.select();
+});
+
+cancelRenamePageButton?.addEventListener("click", () => {
+  renamePageDialog?.close();
+});
+
+confirmRenamePageButton?.addEventListener("click", async () => {
+  if (!renamedPagePathInput || !confirmRenamePageButton) return;
+  const newRoute = `/${renamedPagePathInput.value
+    .trim()
+    .replace(/^\/+|\/+$/g, "")}`;
+  if (newRoute === "/" || newRoute === initialDocument.route) {
+    setRenamePageStatus("Enter a different non-home page path.", true);
+    return;
+  }
+
+  confirmRenamePageButton.disabled = true;
+  if (cancelRenamePageButton) cancelRenamePageButton.disabled = true;
+  renamedPagePathInput.disabled = true;
+  setPageOperationControlsDisabled(true);
+  setRenamePageStatus("Updating saved links and verifying the site…");
+  setSaveStatus(
+    "Renaming the page and checking the production build…",
+    "pending",
+  );
+  try {
+    const response = await fetch("/api/pages", {
+      method: "PATCH",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        route: initialDocument.route,
+        newRoute,
+      }),
+    });
+    const result = (await response.json()) as PageRenameResponse;
+    if (!response.ok || !result.ok || !result.toRoute) {
+      throw new Error(result.message ?? "The page could not be renamed.");
+    }
+    const message = result.message ?? `${initialDocument.title} renamed.`;
+    setRenamePageStatus(message);
+    setSaveStatus(message, "success");
+    window.alert(message);
+    window.location.assign(editorUrlForPage(result.toRoute));
+  } catch (error) {
+    const message =
+      error instanceof Error ? error.message : "The page could not be renamed.";
+    setRenamePageStatus(message, true);
+    setSaveStatus(`Rename failed: ${message}`, "error");
+    confirmRenamePageButton.disabled = false;
+    if (cancelRenamePageButton) cancelRenamePageButton.disabled = false;
+    renamedPagePathInput.disabled = false;
+    setPageOperationControlsDisabled(false);
+  }
+});
+
+removePageButton?.addEventListener("click", async () => {
+  if (initialDocument.route === "/") return;
+  const unsavedNotice = hasUnsavedChanges()
+    ? " Unsaved changes on this page will also be discarded."
+    : "";
+  if (
+    !window.confirm(
+      `Remove ${initialDocument.title} (${initialDocument.route})? Astro-CMS will refuse if another page or reusable template links here.${unsavedNotice}`,
+    )
+  ) {
+    return;
+  }
+
+  setPageOperationControlsDisabled(true);
+  setSaveStatus("Checking links and removing the page…", "pending");
+  try {
+    const response = await fetch("/api/pages", {
+      method: "DELETE",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ route: initialDocument.route }),
+    });
+    const result = (await response.json()) as PageRemovalResponse;
+    if (!response.ok || !result.ok) {
+      throw new Error(result.message ?? "The page could not be removed.");
+    }
+    const message = result.message ?? `${initialDocument.title} removed.`;
+    setSaveStatus(message, "success");
+    window.alert(message);
+    window.location.assign(editorUrlForPage("/"));
+  } catch (error) {
+    const message =
+      error instanceof Error ? error.message : "The page could not be removed.";
+    setSaveStatus(`Removal failed: ${message}`, "error");
+    setPageOperationControlsDisabled(false);
+  }
 });
 
 cancelCreatePageButton?.addEventListener("click", () => {
