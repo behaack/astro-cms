@@ -964,9 +964,18 @@ service or introducing a second rendering system.
   and force editor and preview routes to `noindex`.
 - **Implemented:** social images participate in existing upload publication and
   asset-usage protection even when no visible Image component references them.
-- **Next:** add the marketing-facing SEO form and approximate search/social
-  previews, then make sitemap and `robots.txt` consume the same visibility
-  policy.
+- **Implemented:** a marketing-facing **Search & sharing** panel edits the
+  constrained search title, description, visibility, social image, and required
+  image description; approximate search and social previews update with the
+  draft, and the publish review describes each metadata change in plain
+  language.
+- **Proven in a fresh archive-installed website:** a browser edit flowed through
+  save, the native Astro renderer, production build, and isolated Git publish.
+  The generated page contained the edited title, description, robots policy,
+  canonical URL, Open Graph values, absolute social image, and Twitter card,
+  while the adopter's existing homepage remained unchanged and `/admin` stayed
+  out of production output.
+- **Next:** make sitemap and `robots.txt` consume the same visibility policy.
 
 #### Recommended Integration Choices
 
@@ -1033,14 +1042,17 @@ service or introducing a second rendering system.
 
 1. Create, publish, rename, and retire a page; after each production build, the
    sitemap contains exactly the current public canonical route.
-2. Inspect generated HTML and prove exactly one title, description, canonical,
-   robots policy, Open Graph set, and social-card set per page.
+2. **Proven for the archive-installed starter:** inspect generated HTML and
+   prove exactly one title, description, canonical, robots policy, Open Graph
+   title, and Twitter title, with the full edited metadata also verified in a
+   browser-rendered native Astro page.
 3. Prove `robots.txt` points to the generated sitemap and that preview/editor
    routes are absent from the sitemap and protected from indexing.
 4. Prove a `noindex` page is absent from the sitemap while remaining available
    for intentional direct preview.
-5. Run the archive-installed consumer and initializer-consumer checks so the
-   feature is proven in an adopting Astro project, not only this repository.
+5. **Proven:** the archive-installed consumer and initializer-consumer checks
+   pass, so the implemented metadata slice is verified in an adopting Astro
+   project rather than only this repository.
 
 ### Phase 4 — Git Publishing
 

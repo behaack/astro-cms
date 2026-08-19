@@ -540,8 +540,21 @@
   box-shadow: 0 1.5rem 4rem rgb(20 35 30 / 28%);
 }
 
+.seo-settings-dialog {
+  width: min(68rem, calc(100vw - 2rem));
+  max-height: calc(100vh - 2rem);
+  padding: 1.25rem;
+  overflow: auto;
+  border: 1px solid #92ab9f;
+  border-radius: 0.9rem;
+  color: #17201d;
+  background: #fff;
+  box-shadow: 0 1.5rem 4rem rgb(20 35 30 / 28%);
+}
+
 .create-page-dialog::backdrop,
-.asset-picker-dialog::backdrop {
+.asset-picker-dialog::backdrop,
+.seo-settings-dialog::backdrop {
   background: rgb(20 35 30 / 62%);
 }
 
@@ -613,6 +626,7 @@
 .publish-review-dialog button,
 .create-page-dialog button,
 .asset-picker-dialog button,
+.seo-settings-dialog button,
 .image-asset-tools button {
   padding: 0.65rem 0.9rem;
   border: 1px solid #92ab9f;
@@ -635,6 +649,160 @@
 .asset-picker-dialog button:disabled {
   cursor: not-allowed;
   opacity: 0.5;
+}
+
+.seo-settings-dialog__intro,
+.seo-settings-dialog__save-note {
+  color: #52645c;
+  line-height: 1.5;
+}
+
+.seo-settings-dialog__save-note {
+  margin: 1rem 0 0;
+  padding-top: 1rem;
+  border-top: 1px solid #d4ddd8;
+}
+
+.seo-settings-layout {
+  display: grid;
+  grid-template-columns: minmax(18rem, 0.9fr) minmax(20rem, 1.1fr);
+  gap: 1.5rem;
+  align-items: start;
+}
+
+.seo-settings-fields {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.seo-settings-fields label {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-top: 0.5rem;
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.seo-settings-fields label span {
+  color: #65786f;
+  font-size: 0.72rem;
+  font-weight: 500;
+}
+
+.seo-settings-fields input,
+.seo-settings-fields textarea,
+.seo-settings-fields select {
+  width: 100%;
+  min-width: 0;
+  padding: 0.65rem 0.7rem;
+  border: 1px solid #aebfb6;
+  border-radius: 0.45rem;
+  color: #173c30;
+  background: #fff;
+  font: inherit;
+}
+
+.seo-settings-fields input[readonly] {
+  color: #476158;
+  background: #f5f8f6;
+}
+
+.seo-settings-fields textarea:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.seo-settings-fields .field-help {
+  margin: 0 0 0.25rem;
+  color: #65786f;
+  font-size: 0.75rem;
+  line-height: 1.4;
+}
+
+.seo-image-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.seo-previews {
+  display: grid;
+  gap: 1rem;
+}
+
+.search-result-preview,
+.social-card-preview {
+  min-width: 0;
+  margin: 0;
+  overflow: hidden;
+  border: 1px solid #d4ddd8;
+  border-radius: 0.75rem;
+  background: #fff;
+  box-shadow: 0 0.65rem 1.75rem rgb(23 60 48 / 8%);
+}
+
+.search-result-preview {
+  padding: 1rem;
+}
+
+.preview-label {
+  margin: 0 0 0.85rem;
+  color: #65786f;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.search-preview-route,
+.social-preview-route {
+  margin: 0;
+  overflow-wrap: anywhere;
+  color: #315f50;
+  font-size: 0.78rem;
+}
+
+.search-result-preview h3 {
+  margin: 0.25rem 0 0.35rem;
+  color: #214f9a;
+  font-size: 1.15rem;
+  font-weight: 500;
+}
+
+.search-result-preview > p:last-child,
+.social-card-preview > div > p:last-child {
+  margin: 0;
+  color: #52645c;
+  font-size: 0.84rem;
+  line-height: 1.45;
+}
+
+.social-card-preview > .preview-label {
+  padding: 1rem 1rem 0;
+}
+
+.social-card-preview img {
+  display: block;
+  width: 100%;
+  max-height: 18rem;
+  aspect-ratio: 1.91 / 1;
+  object-fit: cover;
+  background: #edf3ef;
+}
+
+.social-card-preview img[hidden] {
+  display: none;
+}
+
+.social-card-preview > div {
+  padding: 0.9rem 1rem 1rem;
+  background: #f5f8f6;
+}
+
+.social-card-preview h3 {
+  margin: 0.25rem 0 0.35rem;
+  font-size: 1rem;
 }
 
 .publish-change-list {
@@ -837,6 +1005,10 @@
 
   .preview-actions {
     justify-content: flex-start;
+  }
+
+  .seo-settings-layout {
+    grid-template-columns: 1fr;
   }
 }
 

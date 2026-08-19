@@ -18,6 +18,7 @@ import type {
   ComponentNode,
   ComponentType,
   PageDocument,
+  PageSeoMetadata,
   PropertyDefinition,
 } from "../cms/document-types";
 import type { ReusableTemplate } from "../cms/template-types";
@@ -371,6 +372,55 @@ const assetUploadInput = document.querySelector<HTMLInputElement>(
 );
 const uploadImageButton =
   document.querySelector<HTMLButtonElement>("#upload-image");
+const openSeoSettingsButton =
+  document.querySelector<HTMLButtonElement>("#open-seo-settings");
+const seoSettingsDialog = document.querySelector<HTMLDialogElement>(
+  "#seo-settings-dialog",
+);
+const closeSeoSettingsButton = document.querySelector<HTMLButtonElement>(
+  "#close-seo-settings",
+);
+const seoTitleInput = document.querySelector<HTMLInputElement>("#seo-title");
+const seoDescriptionInput =
+  document.querySelector<HTMLTextAreaElement>("#seo-description");
+const seoSearchVisibilitySelect = document.querySelector<HTMLSelectElement>(
+  "#seo-search-visibility",
+);
+const seoSocialImageInput =
+  document.querySelector<HTMLInputElement>("#seo-social-image");
+const seoSocialImageAltInput = document.querySelector<HTMLTextAreaElement>(
+  "#seo-social-image-alt",
+);
+const openSeoImageAssetsButton = document.querySelector<HTMLButtonElement>(
+  "#open-seo-image-assets",
+);
+const clearSeoImageButton =
+  document.querySelector<HTMLButtonElement>("#clear-seo-image");
+const seoTitleCount = document.querySelector<HTMLElement>("#seo-title-count");
+const seoDescriptionCount = document.querySelector<HTMLElement>(
+  "#seo-description-count",
+);
+const seoSocialImageAltCount = document.querySelector<HTMLElement>(
+  "#seo-social-image-alt-count",
+);
+const seoVisibilityHelp = document.querySelector<HTMLElement>(
+  "#seo-visibility-help",
+);
+const seoSearchPreviewTitle = document.querySelector<HTMLElement>(
+  "#seo-search-preview-title",
+);
+const seoSearchPreviewDescription = document.querySelector<HTMLElement>(
+  "#seo-search-preview-description",
+);
+const seoSocialPreviewTitle = document.querySelector<HTMLElement>(
+  "#seo-social-preview-title",
+);
+const seoSocialPreviewDescription = document.querySelector<HTMLElement>(
+  "#seo-social-preview-description",
+);
+const seoSocialPreviewImage = document.querySelector<HTMLImageElement>(
+  "#seo-social-preview-image",
+);
 
 let activeComponent: Component | null = null;
 let lastDeletedCmsId: string | undefined;
@@ -382,6 +432,10 @@ let activeChangeReview: ChangeReview | undefined;
 let reviewedDocument: PageDocument | undefined;
 let savedDocumentSource = JSON.stringify(initialDocument);
 let activeImagePropertyName: string | undefined;
+let assetPickerTarget: "component" | "seo" | undefined;
+let currentSeoMetadata = initialDocument.seo
+  ? structuredClone(initialDocument.seo)
+  : undefined;
 
 const PALETTE_DRAG_MIME = "application/x-astro-cms-component";
 const COMPONENT_DRAG_MIME = "application/x-astro-cms-node";
@@ -578,12 +632,126 @@ function setAssetPickerStatus(
   assetPickerStatus.dataset.state = state;
 }
 
+function seoMetadataFromControls(): PageSeoMetadata | undefined {
+  const title = seoTitleInput?.value.trim() ?? "";
+  const description = seoDescriptionInput?.value.trim() ?? "";
+  const socialImage = seoSocialImageInput?.value.trim() ?? "";
+  const socialImageAlt = seoSocialImageAltInput?.value.trim() ?? "";
+  const searchVisibility = seoSearchVisibilitySelect?.value ?? "public";
+
+  if (
+    !title &&
+    !description &&
+    !socialImage &&
+    !socialImageAlt &&
+    searchVisibility === "public"
+  ) {
+    return undefined;
+  }
+
+  return {
+    schemaVersion: 1,
+    ...(title ? { title } : {}),
+    ...(description ? { description } : {}),
+    ...(socialImage ? { socialImage } : {}),
+    ...(socialImageAlt ? { socialImageAlt } : {}),
+    searchVisibility: searchVisibility as "public" | "noindex",
+  };
+}
+
+function updateSeoPreview(): void {
+  const searchTitle = seoTitleInput?.value.trim() || initialDocument.title;
+  const searchDescription =
+    seoDescriptionInput?.value.trim() ||
+    initialDocument.description ||
+    "No page description is set.";
+  const socialImage = seoSocialImageInput?.value.trim() ?? "";
+  const socialImageAlt = seoSocialImageAltInput?.value.trim() ?? "";
+  const hiddenFromSearch = seoSearchVisibilitySelect?.value === "noindex";
+
+  if (seoTitleCount) {
+    seoTitleCount.textContent = `${seoTitleInput?.value.length ?? 0}/120`;
+  }
+  if (seoDescriptionCount) {
+    seoDescriptionCount.textContent = `${seoDescriptionInput?.value.length ?? 0}/320`;
+  }
+  if (seoSocialImageAltCount) {
+    seoSocialImageAltCount.textContent = `${seoSocialImageAltInput?.value.length ?? 0}/300`;
+  }
+  if (seoVisibilityHelp) {
+    seoVisibilityHelp.textContent = hiddenFromSearch
+      ? "This page asks search engines not to include it in results."
+      : "Search engines may index this page.";
+  }
+  if (seoSearchPreviewTitle) seoSearchPreviewTitle.textContent = searchTitle;
+  if (seoSocialPreviewTitle) seoSocialPreviewTitle.textContent = searchTitle;
+  if (seoSearchPreviewDescription) {
+    seoSearchPreviewDescription.textContent = searchDescription;
+  }
+  if (seoSocialPreviewDescription) {
+    seoSocialPreviewDescription.textContent = searchDescription;
+  }
+  if (seoSocialImageAltInput) {
+    seoSocialImageAltInput.disabled = !socialImage;
+  }
+  if (clearSeoImageButton) clearSeoImageButton.disabled = !socialImage;
+  if (seoSocialPreviewImage) {
+    seoSocialPreviewImage.hidden = !socialImage;
+    seoSocialPreviewImage.alt = socialImageAlt;
+    if (socialImage) {
+      seoSocialPreviewImage.src = socialImage;
+    } else {
+      seoSocialPreviewImage.removeAttribute("src");
+    }
+  }
+}
+
+function setSeoMetadata(metadata: PageSeoMetadata | undefined): void {
+  currentSeoMetadata = metadata ? structuredClone(metadata) : undefined;
+  if (seoTitleInput) seoTitleInput.value = metadata?.title ?? "";
+  if (seoDescriptionInput) {
+    seoDescriptionInput.value = metadata?.description ?? "";
+  }
+  if (seoSearchVisibilitySelect) {
+    seoSearchVisibilitySelect.value = metadata?.searchVisibility ?? "public";
+  }
+  if (seoSocialImageInput) {
+    seoSocialImageInput.value = metadata?.socialImage ?? "";
+  }
+  if (seoSocialImageAltInput) {
+    seoSocialImageAltInput.value = metadata?.socialImageAlt ?? "";
+  }
+  updateSeoPreview();
+}
+
+function synchronizeSeoControls(): void {
+  currentSeoMetadata = seoMetadataFromControls();
+  updateSeoPreview();
+  refreshDocumentOutput();
+}
+
+updateSeoPreview();
+
 function useImageAsset(asset: ImageAssetIdentity): void {
+  if (assetPickerTarget === "seo") {
+    if (!seoSocialImageInput) return;
+    seoSocialImageInput.value = asset.publicPath;
+    synchronizeSeoControls();
+    setCompositionStatus(
+      `${asset.fileName} selected as the social image.`,
+      "success",
+    );
+    assetPickerTarget = undefined;
+    assetPickerDialog?.close();
+    return;
+  }
+
   if (!activeComponent || !activeImagePropertyName) return;
   activeComponent.set(activeImagePropertyName, asset.publicPath);
   updateImageAssetTools();
   refreshDocumentOutput();
   setCompositionStatus(`${asset.fileName} selected.`, "success");
+  assetPickerTarget = undefined;
   assetPickerDialog?.close();
 }
 
@@ -596,7 +764,8 @@ function currentPageReferencesImage(publicPath: string): boolean {
     );
     return usesImage || Boolean(node.children?.some(visit));
   };
-  return currentDocument().content.some(visit);
+  const page = currentDocument();
+  return page.seo?.socialImage === publicPath || page.content.some(visit);
 }
 
 async function removeImageAsset(
@@ -945,7 +1114,10 @@ function updateCompositionActions(): void {
 }
 
 function currentDocument(): PageDocument {
-  return editorRootToDocument(componentChildren(wrapper), initialDocument);
+  return editorRootToDocument(componentChildren(wrapper), {
+    ...initialDocument,
+    seo: currentSeoMetadata,
+  });
 }
 
 function setLivePreviewStatus(
@@ -1823,6 +1995,29 @@ function synchronizePropertyControl(event: Event): void {
 propertiesPanel?.addEventListener("input", synchronizePropertyControl);
 propertiesPanel?.addEventListener("change", synchronizePropertyControl);
 
+[seoTitleInput, seoDescriptionInput, seoSocialImageAltInput].forEach(
+  (control) => control?.addEventListener("input", synchronizeSeoControls),
+);
+seoSearchVisibilitySelect?.addEventListener("change", synchronizeSeoControls);
+openSeoSettingsButton?.addEventListener("click", () => {
+  updateSeoPreview();
+  seoSettingsDialog?.showModal();
+});
+closeSeoSettingsButton?.addEventListener("click", () => {
+  seoSettingsDialog?.close();
+});
+openSeoImageAssetsButton?.addEventListener("click", () => {
+  assetPickerTarget = "seo";
+  assetPickerDialog?.showModal();
+  void loadImageAssets();
+});
+clearSeoImageButton?.addEventListener("click", () => {
+  if (seoSocialImageInput) seoSocialImageInput.value = "";
+  if (seoSocialImageAltInput) seoSocialImageAltInput.value = "";
+  synchronizeSeoControls();
+  setCompositionStatus("The social image was removed from this page draft.");
+});
+
 livePreviewFrame?.addEventListener("load", () => {
   const previewDocument = livePreviewFrame.contentDocument;
   const marker = previewDocument?.querySelector<HTMLElement>(
@@ -1964,6 +2159,7 @@ document.querySelector("#reset-button")?.addEventListener("click", () => {
     return;
   }
   lastDeletedCmsId = undefined;
+  setSeoMetadata(initialDocument.seo);
   replaceEditorContent(initialDocument.content);
   setCompositionStatus("Opening version restored.", "success");
 });
@@ -1985,6 +2181,7 @@ saveProjectButton?.addEventListener("click", async () => {
       );
     }
 
+    setSeoMetadata(result.document.seo);
     savedDocumentSource = JSON.stringify(result.document);
     setSaveStatus("Changes saved.", "success");
   } catch (error) {
@@ -2020,6 +2217,7 @@ reloadProjectButton?.addEventListener("click", async () => {
     const storedDocument = assertPageDocument(result.document);
     savedDocumentSource = JSON.stringify(storedDocument);
     lastDeletedCmsId = undefined;
+    setSeoMetadata(storedDocument.seo);
     replaceEditorContent(storedDocument.content);
     setCompositionStatus("Saved page reloaded.", "success");
     setSaveStatus("Saved version loaded.", "success");
@@ -2254,11 +2452,13 @@ confirmCreatePageButton?.addEventListener("click", async () => {
 
 openImageAssetsButton?.addEventListener("click", () => {
   if (!activeImagePropertyName) return;
+  assetPickerTarget = "component";
   assetPickerDialog?.showModal();
   void loadImageAssets();
 });
 
 closeAssetPickerButton?.addEventListener("click", () => {
+  assetPickerTarget = undefined;
   assetPickerDialog?.close();
 });
 
@@ -2339,6 +2539,7 @@ confirmPublishButton?.addEventListener("click", async () => {
       result.message ?? `Published as Git commit ${result.shortCommit}.`,
       "success",
     );
+    setSeoMetadata(result.document.seo);
     savedDocumentSource = JSON.stringify(result.document);
     activeChangeReview = undefined;
     reviewedDocument = undefined;

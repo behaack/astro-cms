@@ -17,6 +17,10 @@ export default function EditorApp({
   initialDocument,
   initialPages,
 }: EditorAppProps) {
+  const initialSeo = initialDocument.seo;
+  const initialSearchTitle = initialSeo?.title ?? initialDocument.title;
+  const initialSearchDescription =
+    initialSeo?.description ?? initialDocument.description ?? "";
   const serializedDocument = JSON.stringify(initialDocument).replaceAll(
     "<",
     "\\u003c",
@@ -73,6 +77,9 @@ export default function EditorApp({
         <div className="toolbar-actions">
           <button id="save-project-button" type="button" data-primary="">
             Save changes
+          </button>
+          <button id="open-seo-settings" type="button">
+            Search &amp; sharing
           </button>
           <button id="publish-project-button" type="button">
             Review &amp; publish
@@ -395,8 +402,8 @@ export default function EditorApp({
           </button>
         </div>
         <p>
-          These images come from the website's public folder. Choosing one
-          changes only the selected component's approved image path.
+          These images come from the website's public folder. Choosing one uses
+          that approved project image in the field you are editing.
         </p>
         <form id="asset-upload-form" className="asset-upload-form">
           <div>
@@ -420,6 +427,151 @@ export default function EditorApp({
           aria-label="Available project images"
         />
         <p id="asset-picker-status" aria-live="polite" />
+      </dialog>
+
+      <dialog id="seo-settings-dialog" className="seo-settings-dialog">
+        <div className="publish-review-dialog__header">
+          <div>
+            <p className="eyebrow">Page settings</p>
+            <h2>Search &amp; sharing</h2>
+          </div>
+          <button id="close-seo-settings" type="button">
+            Close
+          </button>
+        </div>
+        <p className="seo-settings-dialog__intro">
+          Control how this page is described to search engines and social
+          networks. These previews are approximations; each service controls its
+          final presentation.
+        </p>
+        <div className="seo-settings-layout">
+          <section className="seo-settings-fields" aria-label="SEO fields">
+            <label htmlFor="seo-title">
+              Search title
+              <span id="seo-title-count">
+                {initialSeo?.title?.length ?? 0}/120
+              </span>
+            </label>
+            <input
+              id="seo-title"
+              type="text"
+              maxLength={120}
+              defaultValue={initialSeo?.title ?? ""}
+              placeholder={initialDocument.title}
+            />
+            <p className="field-help">
+              Leave blank to use the page title: {initialDocument.title}
+            </p>
+
+            <label htmlFor="seo-description">
+              Search description
+              <span id="seo-description-count">
+                {initialSeo?.description?.length ?? 0}/320
+              </span>
+            </label>
+            <textarea
+              id="seo-description"
+              rows={4}
+              maxLength={320}
+              defaultValue={initialSeo?.description ?? ""}
+              placeholder={initialDocument.description}
+            />
+            <p className="field-help">
+              Leave blank to use the page description.
+            </p>
+
+            <label htmlFor="seo-search-visibility">Search visibility</label>
+            <select
+              id="seo-search-visibility"
+              defaultValue={initialSeo?.searchVisibility ?? "public"}
+            >
+              <option value="public">Public — allow indexing</option>
+              <option value="noindex">Hidden from search results</option>
+            </select>
+            <p id="seo-visibility-help" className="field-help">
+              Search engines may index this page.
+            </p>
+
+            <label htmlFor="seo-social-image">Social image</label>
+            <input
+              id="seo-social-image"
+              type="text"
+              readOnly
+              defaultValue={initialSeo?.socialImage ?? ""}
+              placeholder="No social image selected"
+            />
+            <div className="seo-image-actions">
+              <button id="open-seo-image-assets" type="button">
+                Choose project image
+              </button>
+              <button
+                id="clear-seo-image"
+                type="button"
+                disabled={!initialSeo?.socialImage}
+              >
+                Remove image
+              </button>
+            </div>
+
+            <label htmlFor="seo-social-image-alt">
+              Social image description
+              <span id="seo-social-image-alt-count">
+                {initialSeo?.socialImageAlt?.length ?? 0}/300
+              </span>
+            </label>
+            <textarea
+              id="seo-social-image-alt"
+              rows={3}
+              maxLength={300}
+              defaultValue={initialSeo?.socialImageAlt ?? ""}
+              disabled={!initialSeo?.socialImage}
+              placeholder="Describe the image for people who cannot see it"
+            />
+            <p className="field-help">
+              Required when a social image is selected.
+            </p>
+          </section>
+
+          <section className="seo-previews" aria-label="Metadata previews">
+            <article className="search-result-preview">
+              <p className="preview-label">Approximate search result</p>
+              <p id="seo-search-preview-route" className="search-preview-route">
+                {initialDocument.route}
+              </p>
+              <h3 id="seo-search-preview-title">{initialSearchTitle}</h3>
+              <p id="seo-search-preview-description">
+                {initialSearchDescription || "No page description is set."}
+              </p>
+            </article>
+
+            <article className="social-card-preview">
+              <p className="preview-label">Approximate social card</p>
+              <img
+                id="seo-social-preview-image"
+                src={initialSeo?.socialImage}
+                alt={initialSeo?.socialImageAlt ?? ""}
+                hidden={!initialSeo?.socialImage}
+              />
+              <div>
+                <p
+                  id="seo-social-preview-route"
+                  className="social-preview-route"
+                >
+                  {initialDocument.route}
+                </p>
+                <h3 id="seo-social-preview-title">{initialSearchTitle}</h3>
+                <p id="seo-social-preview-description">
+                  {initialSearchDescription || "No page description is set."}
+                </p>
+              </div>
+            </article>
+          </section>
+        </div>
+        <p className="seo-settings-dialog__save-note">
+          These settings are part of the page draft. Use{" "}
+          <strong>Save changes</strong> when you are ready to write them to the
+          project.
+        </p>
       </dialog>
 
       <details className="document-panel">

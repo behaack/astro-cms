@@ -42,6 +42,12 @@ documents remain valid and public by default. Add Astro's `site` configuration
 to produce absolute canonical and social-image URLs; without it, the component
 deliberately omits a canonical URL rather than guessing the deployed domain.
 
+Marketing users edit these fields through **Search & sharing** in `/admin`.
+The search-result and social-card previews are approximate guidance rather than
+promises about a third-party service. The settings remain part of the page draft
+until **Save changes** is used, and **Review & publish** lists each metadata
+change before the production build and local Git commit.
+
 ## Project images
 
 The starter Image component uses `/astro-cms-placeholder.svg`. During local

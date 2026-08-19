@@ -102,6 +102,19 @@ async function pathExists(filePath) {
   }
 }
 
+function assertMatch(source, pattern, message) {
+  if (!pattern.test(source)) throw new Error(message);
+}
+
+function assertSingleMatch(source, pattern, label) {
+  const matches = source.match(new RegExp(pattern.source, pattern.flags + "g"));
+  if (matches?.length !== 1) {
+    throw new Error(
+      `Expected exactly one ${label} in generated HTML; found ${matches?.length ?? 0}.`,
+    );
+  }
+}
+
 await rm(verificationDirectory, { recursive: true, force: true });
 await mkdir(verificationDirectory, { recursive: true });
 await runPnpm(
@@ -166,6 +179,7 @@ for (const requiredPath of [
   "src/cli/astro-cms.mjs",
   "src/cli/init.mjs",
   "src/cli/templates/manifest.ts",
+  "src/cli/templates/components/AstroCmsSeoHead.astro",
   "src/cli/templates/pages/astro-cms-demo/[...path].astro",
   "src/cms/git-publisher.ts",
   "src/components/renderer/DocumentRenderer.astro",
@@ -174,6 +188,7 @@ for (const requiredPath of [
   "src/pages/api/pages.ts",
   "src/pages/api/publish.ts",
   "src/cms/local-asset-store.ts",
+  "src/cms/seo-metadata.ts",
 ]) {
   if (!(await pathExists(path.join(installedPackageDirectory, requiredPath)))) {
     throw new Error(`Required package file is missing: ${requiredPath}`);
@@ -200,6 +215,9 @@ if (installedManifest.bin?.["astro-cms"] !== "./src/cli/astro-cms.mjs") {
 if (installedManifest.exports?.["./git"] !== "./src/cms/git-publisher.ts") {
   throw new Error("The package does not expose the Git publishing service.");
 }
+if (installedManifest.exports?.["./seo"] !== "./src/cms/seo-metadata.ts") {
+  throw new Error("The package does not expose the SEO metadata resolver.");
+}
 
 const serverEntry = await readFile(
   path.join(consumerDirectory, "dist", "server", "entry.mjs"),
@@ -217,6 +235,7 @@ const initializerManifest = {
   private: true,
   type: "module",
   scripts: {
+    dev: "astro dev",
     check: "astro-check",
     build: "astro build",
   },
@@ -242,7 +261,7 @@ await writeFile(
 );
 await writeFile(
   path.join(initializerDirectory, "astro.config.mjs"),
-  'import { defineConfig } from "astro/config";\n\nexport default defineConfig({\n  devToolbar: { enabled: false },\n});\n',
+  'import { defineConfig } from "astro/config";\n\nexport default defineConfig({\n  site: "https://example.com",\n  devToolbar: { enabled: false },\n});\n',
   "utf8",
 );
 await writeFile(
@@ -318,6 +337,7 @@ await runPnpm(["build"], initializerDirectory);
 for (const generatedPath of [
   "ASTRO-CMS.md",
   "src/astro-cms.manifest.ts",
+  "src/components/AstroCmsSeoHead.astro",
   "src/pages/astro-cms-demo.astro",
   "src/pages/astro-cms-demo/[...path].astro",
   "src/components/cms/Image.astro",
@@ -335,6 +355,77 @@ if (await pathExists(path.join(initializerDirectory, "dist", "admin"))) {
     "The initialized production build contains the editor route.",
   );
 }
+
+const initializedDemoHtml = await readFile(
+  path.join(initializerDirectory, "dist", "astro-cms-demo", "index.html"),
+  "utf8",
+);
+assertSingleMatch(initializedDemoHtml, /<title>/, "page title");
+assertSingleMatch(
+  initializedDemoHtml,
+  /<meta name="description"/,
+  "description meta tag",
+);
+assertSingleMatch(
+  initializedDemoHtml,
+  /<meta name="robots"/,
+  "robots meta tag",
+);
+assertSingleMatch(
+  initializedDemoHtml,
+  /<link rel="canonical"/,
+  "canonical link",
+);
+assertSingleMatch(
+  initializedDemoHtml,
+  /<meta property="og:title"/,
+  "Open Graph title",
+);
+assertSingleMatch(
+  initializedDemoHtml,
+  /<meta name="twitter:title"/,
+  "Twitter title",
+);
+assertMatch(
+  initializedDemoHtml,
+  /<title>Native Astro pages, safely assembled<\/title>/,
+  "The generated page did not use its SEO title.",
+);
+assertMatch(
+  initializedDemoHtml,
+  /<meta name="description" content="A constrained visual editor for pages built from approved native Astro components\."/,
+  "The generated page did not use its SEO description.",
+);
+assertMatch(
+  initializedDemoHtml,
+  /<meta name="robots" content="index, follow"/,
+  "The generated public page did not allow indexing.",
+);
+assertMatch(
+  initializedDemoHtml,
+  /<link rel="canonical" href="https:\/\/example\.com\/astro-cms-demo\/?"/,
+  "The generated page did not derive its canonical URL from Astro site metadata.",
+);
+assertMatch(
+  initializedDemoHtml,
+  /<meta property="og:title" content="Native Astro pages, safely assembled"/,
+  "The generated page did not emit its Open Graph title.",
+);
+assertMatch(
+  initializedDemoHtml,
+  /<meta name="twitter:card" content="summary"/,
+  "The generated page did not emit its Twitter card policy.",
+);
+
+const initializedExistingHomeHtml = await readFile(
+  path.join(initializerDirectory, "dist", "index.html"),
+  "utf8",
+);
+assertMatch(
+  initializedExistingHomeHtml,
+  /This existing page belongs to the adopter\./,
+  "The initializer consumer no longer renders the adopter's original homepage.",
+);
 
 console.log(
   `Verified ${rootManifest.name}@${rootManifest.version} from archive install through production build.`,

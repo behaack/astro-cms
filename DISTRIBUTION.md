@@ -11,6 +11,7 @@ The archive exposes:
 - `@astro-cms/core/integration`
 - `@astro-cms/core/renderer`
 - `@astro-cms/core/store`
+- `@astro-cms/core/seo`
 - `@astro-cms/core/git`
 - `@astro-cms/core/types`
 - `@astro-cms/core/contract`
@@ -40,7 +41,8 @@ pnpm verify:package
 9. Confirms the production build does not contain `/admin`.
 10. Installs the archive in a bare Astro project and runs `astro-cms init`.
 11. Confirms the initializer preserves the existing page and becomes a no-op on its second run.
-12. Type-checks and builds the generated project, including its route-backed native pages.
+12. Type-checks and builds the generated project, including its route-backed native pages, while confirming that the adopter's existing homepage remains unchanged.
+13. Inspects the generated production HTML and asserts one expected title, description, robots policy, canonical URL, Open Graph title, and Twitter title.
 
 Set `ASTRO_CMS_PNPM_STORE_DIR` when verification should use a specific pnpm
 store. The generated `.package-verification` directory is intentionally
