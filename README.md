@@ -44,6 +44,8 @@ pnpm test
 pnpm build
 ```
 
+Use `pnpm test:watch` while developing to rerun affected tests as files change. GitHub Actions runs `pnpm check` and `pnpm test` for every pull request and every push to `main`.
+
 The final thesis evidence and its explicit limits are recorded in [`THESIS.md`](./THESIS.md).
 
 ## Independent adoption proof

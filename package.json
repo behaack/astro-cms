@@ -27,12 +27,12 @@
   ],
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/behaack/astro-crm.git"
+    "url": "git+https://github.com/behaack/astro-cms.git"
   },
   "bugs": {
-    "url": "https://github.com/behaack/astro-crm/issues"
+    "url": "https://github.com/behaack/astro-cms/issues"
   },
-  "homepage": "https://github.com/behaack/astro-crm#readme",
+  "homepage": "https://github.com/behaack/astro-cms#readme",
   "exports": {
     "./integration": "./src/integration.ts",
     "./renderer": "./src/components/renderer/DocumentRenderer.astro",
@@ -49,6 +49,7 @@
     "preview": "astro preview",
     "check": "astro-check",
     "test": "vitest run",
+    "test:watch": "vitest",
     "prepack": "pnpm check && pnpm test",
     "verify:package": "node scripts/verify-package.mjs"
   },
