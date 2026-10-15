@@ -83,7 +83,11 @@ The marketing editor:
 
 The defining boundary is:
 
-> Users may compose trusted components and configure approved properties. They may not introduce arbitrary HTML, CSS, or executable JavaScript.
+> Users compose registered native components and configure their content and presentation. They may apply global stylesheet classes, Tailwind utilities, and component-scoped CSS declarations. Arbitrary HTML and executable JavaScript remain outside the editor contract.
+
+The October 15, 2026 styling expansion adds optional component presentation data, page stylesheet URLs, and responsive local overrides. Astro renders these values in both draft previews and public pages; native components remain the only renderer.
+
+The Content tab also supports selected-word bold, italic and underline, block alignment, line spacing and letter spacing. Manifest text properties opt in with `formatting: true`; validated ranges accompany the plain text in `node.styles.text`. Native components render these through the escaped semantic formatting helper. Copying, templates, save/reload and undo/redo retain the formatting.
 
 ---
 
@@ -157,8 +161,8 @@ The adapter must disable or omit GrapesJS capabilities that violate the product 
 
 - Generic HTML blocks.
 - Arbitrary code blocks.
-- Arbitrary CSS editing.
-- Unrestricted Style Manager controls.
+- Global selector/rule injection through component CSS fields (these accept scoped declarations).
+- Unrestricted editor-vendor style data outside the neutral document format.
 - Arbitrary DOM restructuring inside registered components.
 - Unapproved scripts, embeds, or URLs.
 

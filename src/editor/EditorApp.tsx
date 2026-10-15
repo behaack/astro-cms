@@ -1,9 +1,14 @@
-import { useEffect } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import "grapesjs/dist/css/grapes.min.css";
 import { componentDefinitions } from "../cms/component-definitions";
 import type { PageDocument } from "../cms/document-types";
 import type { LocalPageSummary } from "../cms/local-page-store";
+import EditorToolbar from "./EditorToolbar";
+import ToolbarAction from "./ToolbarAction";
+import StylesPanel from "./StylesPanel";
+import ContentFormatting from "./ContentFormatting";
+import type { EditorDraft, EditorSession } from "./start-editor";
 import "./editor-app.css";
 
 interface EditorAppProps {
@@ -17,6 +22,13 @@ export default function EditorApp({
   initialDocument,
   initialPages,
 }: EditorAppProps) {
+  const draft = useRef<EditorDraft | undefined>(undefined);
+  const [settingsTab, setSettingsTab] = useState<"content" | "styles">(
+    "content",
+  );
+  const pageSection = Object.values(componentDefinitions).find(
+    (definition) => definition.allowedAtRoot && definition.acceptsChildren,
+  );
   const initialSeo = initialDocument.seo;
   const initialSearchTitle = initialSeo?.title ?? initialDocument.title;
   const initialSearchDescription =
@@ -27,102 +39,45 @@ export default function EditorApp({
   );
 
   useEffect(() => {
-    void import("./start-editor");
+    let cancelled = false;
+    let session: EditorSession | undefined;
+    void import("./start-editor")
+      .then(({ startEditor }) => {
+        if (!cancelled) session = startEditor(draft.current);
+      })
+      .catch((error: unknown) => {
+        if (cancelled) return;
+        const status = document.querySelector<HTMLElement>("#save-status");
+        if (status) {
+          status.textContent = `The editor could not start: ${error instanceof Error ? error.message : "Unknown error"}`;
+          status.dataset.state = "error";
+        }
+      });
+    return () => {
+      // Ignore imports that finish after unmount, and retain the current draft.
+      cancelled = true;
+      if (session) draft.current = session.dispose();
+    };
   }, []);
 
   return (
     <main className="editor-shell">
-      <header className="editor-toolbar">
-        <div className="page-heading">
-          <p className="eyebrow">Astro-CMS page editor</p>
-          <h1>{initialDocument.title}</h1>
-          <div className="page-manager">
-            <label htmlFor="page-switcher">Page</label>
-            <select id="page-switcher" defaultValue={initialDocument.route}>
-              {initialPages.map((page) => (
-                <option key={page.route} value={page.route}>
-                  {page.title} · {page.route}
-                </option>
-              ))}
-            </select>
-            <button id="open-create-page" type="button">
-              Create page
-            </button>
-            <button
-              id="open-rename-page"
-              type="button"
-              disabled={initialDocument.route === "/"}
-              title={
-                initialDocument.route === "/"
-                  ? "The homepage path cannot be renamed."
-                  : "Rename this page and update known internal links."
-              }
-            >
-              Rename page
-            </button>
-            <button
-              id="remove-page"
-              type="button"
-              disabled={initialDocument.route === "/"}
-              title={
-                initialDocument.route === "/"
-                  ? "The homepage cannot be deleted."
-                  : "Remove this page after checking incoming links."
-              }
-            >
-              Remove page
-            </button>
-          </div>
-        </div>
-        <div className="toolbar-actions">
-          <button id="save-project-button" type="button" data-primary="">
-            Save changes
-          </button>
-          <button id="open-seo-settings" type="button">
-            Search &amp; sharing
-          </button>
-          <button id="publish-project-button" type="button">
-            Review &amp; publish
-          </button>
-          <span className="toolbar-divider" aria-hidden="true" />
-          <button id="undo-button" type="button">
-            Undo
-          </button>
-          <button id="redo-button" type="button">
-            Redo
-          </button>
-          <button id="blank-button" type="button">
-            Start new page
-          </button>
-          <button id="reset-button" type="button">
-            Restore opening version
-          </button>
-          <button id="reload-project-button" type="button">
-            Reload saved version
-          </button>
-          <a
-            href={`/preview?page=${encodeURIComponent(initialDocument.route)}`}
-            target="_blank"
-            rel="noreferrer"
-          >
-            Open saved page
-          </a>
-        </div>
-      </header>
+      <EditorToolbar document={initialDocument} pages={initialPages} />
       <p id="save-status" className="save-status" aria-live="polite" />
 
       <section className="milestone-note">
         <strong>Edit safely:</strong> select something in the preview to change
-        its settings. Add approved content from the left or drag it to a visible
-        insertion point. The site's responsive design remains locked.
+        its content or styles. Add content from the left or drag it to an
+        insertion point. Check phone, tablet, and desktop previews before
+        saving.
       </section>
 
       <div className="editor-workspace">
         <aside className="editor-sidebar" aria-label="Available components">
           <h2>Components</h2>
           <p className="sidebar-help">
-            Choose a component, then click a matching insertion line in the page
-            preview—or drag it there.
+            Choose a component and use Add, or drag it to a matching insertion
+            point in the preview.
           </p>
           <div className="component-library">
             {componentCategories.map((category) => (
@@ -233,27 +188,62 @@ export default function EditorApp({
               <p id="live-preview-status" aria-live="polite">
                 Loading the page preview…
               </p>
+              <p id="preview-viewport-size" className="preview-viewport-size">
+                Desktop · 1280px
+              </p>
             </div>
             <div className="preview-actions">
-              <div className="preview-size-controls" aria-label="Preview width">
-                <button type="button" data-preview-width="390px">
-                  Phone
-                </button>
-                <button type="button" data-preview-width="768px">
-                  Tablet
-                </button>
-                <button type="button" data-preview-width="100%" data-active="">
-                  Desktop
-                </button>
+              <div
+                className="preview-size-controls"
+                role="group"
+                aria-label="Preview width"
+              >
+                <ToolbarAction
+                  id="preview-width-phone"
+                  label="Phone"
+                  icon="phone"
+                  previewWidth="390px"
+                  pressed={false}
+                />
+                <ToolbarAction
+                  id="preview-width-tablet"
+                  label="Tablet"
+                  icon="tablet"
+                  previewWidth="768px"
+                  pressed={false}
+                />
+                <ToolbarAction
+                  id="preview-width-desktop"
+                  label="Desktop"
+                  icon="desktop"
+                  previewWidth="1280px"
+                  pressed
+                />
               </div>
-              <button id="refresh-preview-button" type="button">
-                Refresh
-              </button>
-              <a id="open-live-preview" href="/preview" target="_blank" hidden>
-                Open separately
-              </a>
+              <ToolbarAction
+                id="refresh-preview-button"
+                label="Refresh"
+                icon="reload"
+              />
+              <ToolbarAction
+                id="open-live-preview"
+                label="Open separately"
+                icon="open"
+                href="/preview"
+                hidden
+              />
             </div>
           </div>
+          {pageSection && (
+            <button
+              id="add-page-section"
+              type="button"
+              className="add-page-section"
+              data-cms-root-type={pageSection.type}
+            >
+              <span aria-hidden="true">+</span> Add {pageSection.label} to page
+            </button>
+          )}
           <div
             id="live-preview-frame-shell"
             className="live-preview-frame-shell"
@@ -267,14 +257,71 @@ export default function EditorApp({
           aria-label="Settings"
         >
           <h2>Settings</h2>
-          <div id="cms-properties" />
-          <section id="image-asset-tools" className="image-asset-tools" hidden>
-            <h3>Project image</h3>
-            <p id="active-image-path" />
-            <button id="open-image-assets" type="button">
-              Choose from project images
-            </button>
-          </section>
+          <div
+            className="settings-tabs"
+            role="tablist"
+            aria-label="Component settings"
+            onKeyDown={(event) => {
+              if (
+                !["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)
+              )
+                return;
+              event.preventDefault();
+              const next =
+                event.key === "Home"
+                  ? "content"
+                  : event.key === "End"
+                    ? "styles"
+                    : settingsTab === "content"
+                      ? "styles"
+                      : "content";
+              setSettingsTab(next);
+              document.getElementById(`settings-tab-${next}`)?.focus();
+            }}
+          >
+            {(["content", "styles"] as const).map((tab) => (
+              <button
+                key={tab}
+                id={`settings-tab-${tab}`}
+                type="button"
+                role="tab"
+                aria-selected={settingsTab === tab}
+                aria-controls={`settings-panel-${tab}`}
+                tabIndex={settingsTab === tab ? 0 : -1}
+                onClick={() => setSettingsTab(tab)}
+              >
+                {tab === "content" ? "Content" : "Styles"}
+              </button>
+            ))}
+          </div>
+          <div
+            id="settings-panel-content"
+            role="tabpanel"
+            aria-labelledby="settings-tab-content"
+            hidden={settingsTab !== "content"}
+          >
+            <ContentFormatting />
+            <div id="cms-properties" />
+            <section
+              id="image-asset-tools"
+              className="image-asset-tools"
+              hidden
+            >
+              <h3>Project image</h3>
+              <p id="active-image-path" />
+              <button id="open-image-assets" type="button">
+                Choose from project images
+              </button>
+            </section>
+          </div>
+          <div
+            id="settings-panel-styles"
+            role="tabpanel"
+            aria-labelledby="settings-tab-styles"
+            hidden={settingsTab !== "styles"}
+          >
+            <StylesPanel />
+          </div>
           <div className="validation-card">
             <h2>Page check</h2>
             <p id="cms-validation">Checking page…</p>
@@ -286,6 +333,39 @@ export default function EditorApp({
         <div id="cms-blocks-engine" />
         <div id="cms-canvas" />
       </div>
+
+      <dialog
+        id="editor-confirmation-dialog"
+        className="confirmation-dialog"
+        aria-labelledby="editor-confirmation-heading"
+        aria-describedby="editor-confirmation-description editor-confirmation-note"
+      >
+        <form method="dialog">
+          <p className="eyebrow">Confirm action</p>
+          <h2 id="editor-confirmation-heading">Clear page content?</h2>
+          <p id="editor-confirmation-description">
+            Remove all content from this page. The page and its address will
+            stay in place.
+          </p>
+          <p id="editor-confirmation-note" className="page-operation-note">
+            Your saved page will stay unchanged until you save.
+          </p>
+          <div className="confirmation-dialog__actions">
+            <button id="cancel-editor-action" type="submit" value="cancel">
+              Cancel
+            </button>
+            <button
+              id="confirm-editor-action"
+              type="submit"
+              value="confirm"
+              data-primary=""
+              data-danger=""
+            >
+              Clear page content
+            </button>
+          </div>
+        </form>
+      </dialog>
 
       <dialog id="publish-review-dialog" className="publish-review-dialog">
         <div className="publish-review-dialog__header">

@@ -72,6 +72,7 @@ export const componentManifest = {
     properties: {
       text: {
         type: "text",
+        formatting: true,
         label: "Text",
         required: true,
         defaultValue: "A clear heading",
@@ -96,6 +97,7 @@ export const componentManifest = {
     properties: {
       text: {
         type: "text",
+        formatting: true,
         label: "Text",
         required: true,
         defaultValue: "Add supporting copy.",
@@ -169,6 +171,7 @@ export const componentManifest = {
     properties: {
       text: {
         type: "text",
+        formatting: true,
         label: "Message",
         required: true,
         defaultValue: "Highlight an important piece of information.",

@@ -1,5 +1,9 @@
 ---
+import { formattedTextHtml } from "@astro-cms/core/formatting";
+import type { TextFormat } from "@astro-cms/core/types";
 interface Props {
+  cmsTextFormatting?: Record<string, TextFormat[]>;
+  cmsAttributes?: Record<string, string>;
   text: string;
   level?: 1 | 2 | 3;
   editorId?: string;
@@ -7,19 +11,28 @@ interface Props {
 
 const { text, level = 2, editorId } = Astro.props;
 const Tag = `h${level}` as "h1" | "h2" | "h3";
+const { class: cmsClass, ...cmsAttributes } = Astro.props.cmsAttributes ?? {};
 ---
 
-<Tag class="cms-heading" data-astro-cms-node={editorId}>{text}</Tag>
+<Tag
+  {...cmsAttributes}
+  class:list={["cms-heading", cmsClass]}
+  data-astro-cms-node={editorId}
+  data-astro-cms-text={editorId ? "text" : undefined}
+  set:html={formattedTextHtml(text, Astro.props.cmsTextFormatting?.text)}
+/>
 
 <style>
-  .cms-heading {
-    max-width: 18ch;
-    margin: 0;
-    font:
-      700 clamp(2.25rem, 6vw, 5.5rem) / 0.98 ui-sans-serif,
-      system-ui,
-      sans-serif;
-    letter-spacing: -0.055em;
-    text-wrap: balance;
+  @layer astro-cms-defaults {
+    .cms-heading {
+      max-width: 18ch;
+      margin: 0;
+      font:
+        700 clamp(2.25rem, 6vw, 5.5rem) / 0.98 ui-sans-serif,
+        system-ui,
+        sans-serif;
+      letter-spacing: -0.055em;
+      text-wrap: balance;
+    }
   }
 </style>

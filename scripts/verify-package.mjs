@@ -597,6 +597,8 @@ assertMatch(
   "The initializer consumer no longer renders the adopter's original homepage.",
 );
 
+await runPnpm(["verify:styles"], projectDirectory);
+
 console.log(
   `Verified ${rootManifest.name}@${rootManifest.version} from archive install through production build.`,
 );

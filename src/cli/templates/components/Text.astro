@@ -1,21 +1,34 @@
 ---
+import { formattedTextHtml } from "@astro-cms/core/formatting";
+import type { TextFormat } from "@astro-cms/core/types";
 interface Props {
+  cmsTextFormatting?: Record<string, TextFormat[]>;
+  cmsAttributes?: Record<string, string>;
   text: string;
   editorId?: string;
 }
 
 const { text, editorId } = Astro.props;
+const { class: cmsClass, ...cmsAttributes } = Astro.props.cmsAttributes ?? {};
 ---
 
-<p class="cms-text" data-astro-cms-node={editorId}>{text}</p>
+<p
+  {...cmsAttributes}
+  class:list={["cms-text", cmsClass]}
+  data-astro-cms-node={editorId}
+  data-astro-cms-text={editorId ? "text" : undefined}
+  set:html={formattedTextHtml(text, Astro.props.cmsTextFormatting?.text)}
+/>
 
 <style>
-  .cms-text {
-    max-width: 58ch;
-    margin: 0;
-    font:
-      400 clamp(1.05rem, 2vw, 1.3rem) / 1.65 ui-sans-serif,
-      system-ui,
-      sans-serif;
+  @layer astro-cms-defaults {
+    .cms-text {
+      max-width: 58ch;
+      margin: 0;
+      font:
+        400 clamp(1.05rem, 2vw, 1.3rem) / 1.65 ui-sans-serif,
+        system-ui,
+        sans-serif;
+    }
   }
 </style>

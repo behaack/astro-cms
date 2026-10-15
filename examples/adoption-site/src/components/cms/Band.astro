@@ -1,5 +1,6 @@
 ---
 interface Props {
+  cmsAttributes?: Record<string, string>;
   tone?: "paper" | "ink" | "accent";
   width?: "standard" | "narrow";
   editorId?: string;
@@ -12,9 +13,14 @@ const {
   editorId,
   editorSlot,
 } = Astro.props;
+const { class: cmsClass, ...cmsAttributes } = Astro.props.cmsAttributes ?? {};
 ---
 
-<section class:list={["band", `band--${tone}`]} data-astro-cms-node={editorId}>
+<section
+  {...cmsAttributes}
+  class:list={["band", `band--${tone}`, cmsClass]}
+  data-astro-cms-node={editorId}
+>
   <div
     class:list={["band__inner", `band__inner--${width}`]}
     data-astro-cms-slot={editorSlot}
@@ -24,34 +30,36 @@ const {
 </section>
 
 <style>
-  .band {
-    padding: clamp(4rem, 10vw, 9rem) clamp(1.25rem, 6vw, 6rem);
-  }
+  @layer astro-cms-defaults {
+    .band {
+      padding: clamp(4rem, 10vw, 9rem) clamp(1.25rem, 6vw, 6rem);
+    }
 
-  .band--paper {
-    color: #201d1a;
-    background: #f4efe6;
-  }
+    .band--paper {
+      color: #201d1a;
+      background: #f4efe6;
+    }
 
-  .band--ink {
-    color: #fff8ec;
-    background: #201d1a;
-  }
+    .band--ink {
+      color: #fff8ec;
+      background: #201d1a;
+    }
 
-  .band--accent {
-    color: #fff8ec;
-    background: #9a4f20;
-  }
+    .band--accent {
+      color: #fff8ec;
+      background: #9a4f20;
+    }
 
-  .band__inner {
-    margin-inline: auto;
-  }
+    .band__inner {
+      margin-inline: auto;
+    }
 
-  .band__inner--standard {
-    max-width: 72rem;
-  }
+    .band__inner--standard {
+      max-width: 72rem;
+    }
 
-  .band__inner--narrow {
-    max-width: 46rem;
+    .band__inner--narrow {
+      max-width: 46rem;
+    }
   }
 </style>

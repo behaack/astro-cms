@@ -30,16 +30,27 @@
           "id": "caff682d-0490-45bc-97b6-cfbe59819c5f",
           "type": "Stack",
           "props": {
-            "gap": "medium",
-            "align": "start"
+            "align": "start",
+            "gap": "medium"
           },
           "children": [
             {
               "id": "91c9186b-d92e-4c0c-aa05-f6b4942f413b",
               "type": "Heading",
               "props": {
-                "text": "Build campaigns without breaking the site",
-                "level": 1
+                "level": 1,
+                "text": "Build campaigns without breaking the site"
+              },
+              "styles": {
+                "text": {
+                  "text": [
+                    {
+                      "start": 37,
+                      "end": 41,
+                      "italic": true
+                    }
+                  ]
+                }
               }
             },
             {
@@ -53,9 +64,9 @@
               "id": "793996aa-9e73-4b4c-8f49-63917345291a",
               "type": "Button",
               "props": {
-                "label": "Launch a campaign",
+                "appearance": "primary",
                 "href": "/campaign",
-                "appearance": "primary"
+                "label": "Launch a campaign"
               }
             }
           ]

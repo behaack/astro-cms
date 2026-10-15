@@ -1,10 +1,12 @@
 import { componentDefinitions } from "./component-definitions";
 import type { ComponentNode, PageDocument } from "./document-types";
+import { styleImagePaths } from "./component-styles";
 
 export function referencedImagePaths(nodes: ComponentNode[]): string[] {
   const paths = new Set<string>();
   const visit = (node: ComponentNode): void => {
     const definition = componentDefinitions[node.type];
+    styleImagePaths(node.styles).forEach((value) => paths.add(value));
     for (const [propertyName, property] of Object.entries(
       definition.properties,
     )) {

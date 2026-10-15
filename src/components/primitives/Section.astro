@@ -1,5 +1,6 @@
 ---
 interface Props {
+  cmsAttributes?: Record<string, string>;
   tone?: "plain" | "soft" | "brand";
   width?: "narrow" | "wide" | "full";
   editorId?: string;
@@ -7,10 +8,12 @@ interface Props {
 }
 
 const { tone = "plain", width = "wide", editorId, editorSlot } = Astro.props;
+const { class: cmsClass, ...cmsAttributes } = Astro.props.cmsAttributes ?? {};
 ---
 
 <section
-  class:list={["cms-section", `cms-section--${tone}`]}
+  {...cmsAttributes}
+  class:list={["cms-section", `cms-section--${tone}`, cmsClass]}
   data-astro-cms-node={editorId}
 >
   <div
@@ -22,37 +25,39 @@ const { tone = "plain", width = "wide", editorId, editorSlot } = Astro.props;
 </section>
 
 <style>
-  .cms-section {
-    padding: clamp(4rem, 9vw, 8rem) clamp(1.25rem, 5vw, 5rem);
-  }
+  @layer astro-cms-defaults {
+    .cms-section {
+      padding: clamp(4rem, 9vw, 8rem) clamp(1.25rem, 5vw, 5rem);
+    }
 
-  .cms-section--plain {
-    background: #f8faf7;
-  }
+    .cms-section--plain {
+      background: #f8faf7;
+    }
 
-  .cms-section--soft {
-    background: #e7eee9;
-  }
+    .cms-section--soft {
+      background: #e7eee9;
+    }
 
-  .cms-section--brand {
-    color: #f7fff9;
-    background:
-      radial-gradient(circle at 80% 20%, #447663 0, transparent 35%), #173c30;
-  }
+    .cms-section--brand {
+      color: #f7fff9;
+      background:
+        radial-gradient(circle at 80% 20%, #447663 0, transparent 35%), #173c30;
+    }
 
-  .cms-section__inner {
-    margin-inline: auto;
-  }
+    .cms-section__inner {
+      margin-inline: auto;
+    }
 
-  .cms-section__inner--narrow {
-    max-width: 48rem;
-  }
+    .cms-section__inner--narrow {
+      max-width: 48rem;
+    }
 
-  .cms-section__inner--wide {
-    max-width: 74rem;
-  }
+    .cms-section__inner--wide {
+      max-width: 74rem;
+    }
 
-  .cms-section__inner--full {
-    max-width: none;
+    .cms-section__inner--full {
+      max-width: none;
+    }
   }
 </style>

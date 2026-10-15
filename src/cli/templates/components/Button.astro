@@ -1,5 +1,6 @@
 ---
 interface Props {
+  cmsAttributes?: Record<string, string>;
   label: string;
   href: string;
   appearance?: "solid" | "outline";
@@ -7,10 +8,12 @@ interface Props {
 }
 
 const { label, href, appearance = "solid", editorId } = Astro.props;
+const { class: cmsClass, ...cmsAttributes } = Astro.props.cmsAttributes ?? {};
 ---
 
 <a
-  class:list={["cms-button", `cms-button--${appearance}`]}
+  {...cmsAttributes}
+  class:list={["cms-button", `cms-button--${appearance}`, cmsClass]}
   href={href}
   data-astro-cms-node={editorId}
 >
@@ -18,29 +21,31 @@ const { label, href, appearance = "solid", editorId } = Astro.props;
 </a>
 
 <style>
-  .cms-button {
-    display: inline-flex;
-    min-height: 3rem;
-    align-items: center;
-    justify-content: center;
-    padding: 0.75rem 1.2rem;
-    border: 2px solid currentColor;
-    border-radius: 999px;
-    font:
-      700 0.95rem/1 ui-sans-serif,
-      system-ui,
-      sans-serif;
-    text-decoration: none;
-  }
+  @layer astro-cms-defaults {
+    .cms-button {
+      display: inline-flex;
+      min-height: 3rem;
+      align-items: center;
+      justify-content: center;
+      padding: 0.75rem 1.2rem;
+      border: 2px solid currentColor;
+      border-radius: 999px;
+      font:
+        700 0.95rem/1 ui-sans-serif,
+        system-ui,
+        sans-serif;
+      text-decoration: none;
+    }
 
-  .cms-button--solid {
-    color: #f8faf8;
-    border-color: #17201d;
-    background: #17201d;
-  }
+    .cms-button--solid {
+      color: #f8faf8;
+      border-color: #17201d;
+      background: #17201d;
+    }
 
-  .cms-button--outline {
-    color: inherit;
-    background: transparent;
+    .cms-button--outline {
+      color: inherit;
+      background: transparent;
+    }
   }
 </style>

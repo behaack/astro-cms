@@ -105,6 +105,42 @@ Manifest properties marked as `image` retain a normal inspectable string path bu
 
 ## Register a native Astro component
 
+### Apply styles in the editor
+
+The right-hand Settings panel has **Content** and **Styles** tabs. Select a component, then use Styles to apply:
+
+- **Global CSS classes** from stylesheets already loaded by the site's layout. The existing-class selector lists readable global rules; class names can also be entered manually for cross-origin stylesheets.
+- **Tailwind classes** from the standard Tailwind v4 theme, including responsive/hover variants and arbitrary values. Utilities are generated from the actual document for unsaved previews and production rendering; no Tailwind browser runtime or preflight reset is added. Existing project-specific Tailwind themes/plugins are not automatically imported.
+- **Local CSS declarations**, or quick controls for typography, spacing, color, and dimensions. All sizes is the base; Tablet applies at 1023px and below, and Phone at 639px and below. Blank fields inherit the site's or larger-size values. Local rules take precedence over ordinary class rules; explicit `!important` retains standard CSS behavior.
+
+Use **Apply styles** to update the draft and **Save changes** to persist it. **Reset styles** removes the selected component's presentation overrides. Styles participate in undo/redo, copying, reusable templates, and the publish review. H1/H2/H3 remains a content setting independent of font size.
+
+**Page stylesheets** adds existing site-relative or HTTP(S) CSS URLs, one per line. Stylesheets remain developer-managed assets; the editor saves their references and does not rewrite source CSS files. Local CSS accepts declarations rather than selectors or imports. CSS image references participate in upload usage and publication checks.
+
+The canonical JSON has optional `node.styles` (`classes`, `tailwind`, `css`, `tabletCss`, `phoneCss`, `text`) and `document.stylesheets`. Older documents continue to work unchanged.
+
+The **Content** tab provides word-level bold, italic and underline, block alignment, line spacing and letter spacing. Highlight words in the page preview or the Content text box, then use the icon buttons; without selected words they format the whole existing text block. Ctrl/Cmd+B, I, U also work in the Content text box. Preview highlighting survives formatting updates. In an empty text box, emphasis can be enabled before typing. Clear formatting removes marks from the selection; with a collapsed cursor it clears all text marks and local typography overrides on the block. Reset spacing restores inherited line and letter spacing. Changes participate in save/reload, undo/redo, copying and reusable templates. Pasted text is plain text. Hold Alt while dragging a text component to reorder it, or use Move up/Move down.
+
+Text properties opt into this UI with `formatting: true` in the manifest. Native components receive `cmsTextFormatting`, keyed by property name, and render it with `formattedTextHtml(text, cmsTextFormatting?.text)` from `@astro-cms/core/formatting`. Put `data-astro-cms-text={editorId ? "text" : undefined}` on the element containing that property to enable selection in previews (substitute its property name if different). The helper escapes content and emits only `strong`, `em`, `u` and line breaks. Formatting is stored as validated ranges in `node.styles.text`; the original property remains a plain string for search and other consumers. Starter Heading/Text, the prototype Callout and the adoption site's Title/Copy implement this contract.
+
+### Forward presentation attributes
+
+Registered components that support editor styling accept `cmsAttributes` and spread it on their outer styled element, merging its class with their own classes. The shipped components, initializer templates, and independent adoption example implement this contract:
+
+```astro
+---
+const { class: cmsClass, ...cmsAttributes } = Astro.props.cmsAttributes ?? {};
+---
+
+<section {...cmsAttributes} class:list={["my-section", cmsClass]}>
+  <slot />
+</section>
+```
+
+Place component default CSS in `@layer astro-cms-defaults` so global class rules can override it. Presentation is applied to the native element without introducing layout wrappers. Components that omit this forwarding contract keep rendering content but cannot receive editor styling.
+
+### Register content and controls
+
 1. Add `src/components/primitives/<Type>.astro`. Accept only the properties the editor should expose, plus the optional `editorId` boundary marker.
 2. Add one `<Type>` entry to `src/cms/component-manifest.ts` with its category, valid parents, properties, options, and defaults.
 

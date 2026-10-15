@@ -42,6 +42,7 @@
     "./git": "./src/cms/git-publisher.ts",
     "./types": "./src/cms/document-types.ts",
     "./contract": "./src/cms/component-contract.ts",
+    "./formatting": "./src/cms/text-formatting.ts",
     "./package.json": "./package.json"
   },
   "scripts": {
@@ -52,14 +53,18 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "prepack": "pnpm check && pnpm test",
-    "verify:package": "node scripts/verify-package.mjs"
+    "verify:package": "node scripts/verify-package.mjs",
+    "verify:styles": "node scripts/verify-styles.mjs"
   },
   "packageManager": "pnpm@10.24.0",
   "engines": {
     "node": ">=22.12.0"
   },
   "dependencies": {
+    "@types/css-tree": "^3.2.0",
+    "css-tree": "^3.2.1",
     "grapesjs": "^0.23.5",
+    "tailwindcss": "^4.3.3",
     "zod": "^4.4.3"
   },
   "peerDependencies": {

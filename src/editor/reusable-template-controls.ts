@@ -9,6 +9,7 @@ interface TemplateApiResponse {
 }
 
 interface ReusableTemplateControlsOptions {
+  signal: AbortSignal;
   nameInput: HTMLInputElement;
   saveButton: HTMLButtonElement;
   list: HTMLElement;
@@ -38,6 +39,7 @@ export function createReusableTemplateControls(
     message: string,
     state: "neutral" | "pending" | "success" | "error" = "neutral",
   ): void => {
+    if (options.signal.aborted) return;
     options.status.textContent = message;
     options.status.dataset.state = state;
   };
@@ -68,19 +70,23 @@ export function createReusableTemplateControls(
       insert.type = "button";
       insert.textContent = "Insert";
       insert.setAttribute("aria-label", `Insert ${template.name}`);
-      insert.addEventListener("click", () => {
-        if (options.insertTemplate(template)) {
-          setStatus(
-            `${template.name} inserted as an independent copy with fresh identities.`,
-            "success",
-          );
-        } else {
-          setStatus(
-            `${template.name} cannot be inserted at the current selection.`,
-            "error",
-          );
-        }
-      });
+      insert.addEventListener(
+        "click",
+        () => {
+          if (options.insertTemplate(template)) {
+            setStatus(
+              `${template.name} inserted as an independent copy with fresh identities.`,
+              "success",
+            );
+          } else {
+            setStatus(
+              `${template.name} cannot be inserted at the current selection.`,
+              "error",
+            );
+          }
+        },
+        { signal: options.signal },
+      );
 
       row.append(detail, insert);
       options.list.append(row);
@@ -90,8 +96,12 @@ export function createReusableTemplateControls(
   const reload = async (): Promise<void> => {
     setStatus("Loading reusable templates…", "pending");
     try {
-      const response = await fetch("/api/templates", { cache: "no-store" });
+      const response = await fetch("/api/templates", {
+        cache: "no-store",
+        signal: options.signal,
+      });
       const result = (await response.json()) as TemplateApiResponse;
+      if (options.signal.aborted) return;
       if (!response.ok || !result.ok || !result.templates) {
         throw new Error(
           responseMessage(result, "Reusable templates could not be loaded."),
@@ -115,51 +125,59 @@ export function createReusableTemplateControls(
     options.saveButton.disabled = options.selectedNode() === null;
   };
 
-  options.nameInput.addEventListener("input", refreshSelection);
-  options.saveButton.addEventListener("click", async () => {
-    const root = options.selectedNode();
-    const name = options.nameInput.value.trim();
-    if (!root) {
-      setStatus(
-        "Select a component or section before saving a template.",
-        "error",
-      );
-      return;
-    }
-    if (!name) {
-      setStatus("Give the reusable template a name.", "error");
-      options.nameInput.focus();
-      return;
-    }
-
-    options.saveButton.disabled = true;
-    setStatus("Saving reusable template…", "pending");
-    try {
-      const response = await fetch("/api/templates", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ name, root }),
-      });
-      const result = (await response.json()) as TemplateApiResponse;
-      if (!response.ok || !result.ok || !result.template) {
-        throw new Error(
-          responseMessage(result, "Reusable template could not be saved."),
+  options.nameInput.addEventListener("input", refreshSelection, {
+    signal: options.signal,
+  });
+  options.saveButton.addEventListener(
+    "click",
+    async () => {
+      const root = options.selectedNode();
+      const name = options.nameInput.value.trim();
+      if (!root) {
+        setStatus(
+          "Select a component or section before saving a template.",
+          "error",
         );
+        return;
+      }
+      if (!name) {
+        setStatus("Give the reusable template a name.", "error");
+        options.nameInput.focus();
+        return;
       }
 
-      templates = [...templates, result.template].sort((left, right) =>
-        left.name.localeCompare(right.name),
-      );
-      options.nameInput.value = "";
-      render();
-      setStatus(`${result.template.name} saved for reuse.`, "success");
-    } catch (error) {
-      const message = error instanceof Error ? error.message : "Unknown error";
-      setStatus(message, "error");
-    } finally {
-      refreshSelection();
-    }
-  });
+      options.saveButton.disabled = true;
+      setStatus("Saving reusable template…", "pending");
+      try {
+        const response = await fetch("/api/templates", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ name, root }),
+        });
+        const result = (await response.json()) as TemplateApiResponse;
+        if (options.signal.aborted) return;
+        if (!response.ok || !result.ok || !result.template) {
+          throw new Error(
+            responseMessage(result, "Reusable template could not be saved."),
+          );
+        }
+
+        templates = [...templates, result.template].sort((left, right) =>
+          left.name.localeCompare(right.name),
+        );
+        options.nameInput.value = "";
+        render();
+        setStatus(`${result.template.name} saved for reuse.`, "success");
+      } catch (error) {
+        const message =
+          error instanceof Error ? error.message : "Unknown error";
+        setStatus(message, "error");
+      } finally {
+        if (!options.signal.aborted) refreshSelection();
+      }
+    },
+    { signal: options.signal },
+  );
 
   render();
   refreshSelection();

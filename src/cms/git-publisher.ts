@@ -404,6 +404,15 @@ function semanticChanges(
   after: PageDocument,
 ): PageChange[] {
   const changes: PageChange[] = [];
+  if (
+    JSON.stringify(before.stylesheets ?? []) !==
+    JSON.stringify(after.stylesheets ?? [])
+  ) {
+    changes.push({
+      kind: "page",
+      summary: "Changed the page's global stylesheets.",
+    });
+  }
   if (before.title !== after.title) {
     changes.push({
       kind: "page",
@@ -451,6 +460,15 @@ function semanticChanges(
         summary: `Added ${nodeName(current.node)}.`,
       });
       continue;
+    }
+    if (
+      JSON.stringify(previous.node.styles ?? {}) !==
+      JSON.stringify(current.node.styles ?? {})
+    ) {
+      changes.push({
+        kind: "changed",
+        summary: `Changed ${nodeName(current.node)} styles.`,
+      });
     }
     if (
       previous.parentId !== current.parentId ||

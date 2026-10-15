@@ -1,5 +1,6 @@
 ---
 interface Props {
+  cmsAttributes?: Record<string, string>;
   gap?: "tight" | "normal" | "roomy";
   align?: "start" | "center";
   editorId?: string;
@@ -7,10 +8,17 @@ interface Props {
 }
 
 const { gap = "normal", align = "start", editorId, editorSlot } = Astro.props;
+const { class: cmsClass, ...cmsAttributes } = Astro.props.cmsAttributes ?? {};
 ---
 
 <div
-  class:list={["cms-stack", `cms-stack--${gap}`, `cms-stack--${align}`]}
+  {...cmsAttributes}
+  class:list={[
+    "cms-stack",
+    `cms-stack--${gap}`,
+    `cms-stack--${align}`,
+    cmsClass,
+  ]}
   data-astro-cms-node={editorId}
   data-astro-cms-slot={editorSlot}
 >
@@ -18,30 +26,32 @@ const { gap = "normal", align = "start", editorId, editorSlot } = Astro.props;
 </div>
 
 <style>
-  .cms-stack {
-    display: flex;
-    flex-direction: column;
-  }
+  @layer astro-cms-defaults {
+    .cms-stack {
+      display: flex;
+      flex-direction: column;
+    }
 
-  .cms-stack--tight {
-    gap: 0.75rem;
-  }
+    .cms-stack--tight {
+      gap: 0.75rem;
+    }
 
-  .cms-stack--normal {
-    gap: 1.5rem;
-  }
+    .cms-stack--normal {
+      gap: 1.5rem;
+    }
 
-  .cms-stack--roomy {
-    gap: 2.5rem;
-  }
+    .cms-stack--roomy {
+      gap: 2.5rem;
+    }
 
-  .cms-stack--start {
-    align-items: flex-start;
-    text-align: left;
-  }
+    .cms-stack--start {
+      align-items: flex-start;
+      text-align: left;
+    }
 
-  .cms-stack--center {
-    align-items: center;
-    text-align: center;
+    .cms-stack--center {
+      align-items: center;
+      text-align: center;
+    }
   }
 </style>

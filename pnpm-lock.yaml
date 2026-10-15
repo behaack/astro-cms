@@ -7,9 +7,15 @@ settings:
 importers:
   .:
     dependencies:
+      "@types/css-tree":
+        specifier: ^3.2.0
+        version: 3.2.0
       astro:
         specifier: ^7.2.2
         version: 7.2.2(@emnapi/core@1.11.1)(@emnapi/runtime@1.11.3)(@types/node@26.2.0)(yaml@2.9.0)
+      css-tree:
+        specifier: ^3.2.1
+        version: 3.2.1
       grapesjs:
         specifier: ^0.23.5
         version: 0.23.5
@@ -19,6 +25,9 @@ importers:
       react-dom:
         specifier: ^19.2.8
         version: 19.2.8(react@19.2.8)
+      tailwindcss:
+        specifier: ^4.3.3
+        version: 4.3.3
       zod:
         specifier: ^4.4.3
         version: 4.4.3
@@ -1335,6 +1344,12 @@ packages:
     resolution:
       {
         integrity: sha512-Mw558oeA9fFbv65/y4mHtXDs9bPnFMZAL/jxdPFUpOHHIXX91mcgEHbS5Lahr+pwZFR8A7GQleRWeI6cGFC2UA==,
+      }
+
+  "@types/css-tree@3.2.0":
+    resolution:
+      {
+        integrity: sha512-J5KXmk6BFIepOT7280FdFyNs4c5fh0Uee0otjKEvzchrRs38Ii9qminqc4ds0L19X8Zd/rT+brR9jkBthygjWw==,
       }
 
   "@types/deep-eql@4.0.2":
@@ -3098,6 +3113,12 @@ packages:
     engines: { node: ">=16" }
     hasBin: true
 
+  tailwindcss@4.3.3:
+    resolution:
+      {
+        integrity: sha512-gOhV3P7ufE62QDGg1zVaTgCR+EtPv92k2nIhVcVKcLmxT1sUBsQGhnZj175j+MqRt4zLF7ic+sCYjfhxMxj7YQ==,
+      }
+
   tiny-inflate@1.0.3:
     resolution:
       {
@@ -4437,6 +4458,8 @@ snapshots:
       "@types/deep-eql": 4.0.2
       assertion-error: 2.0.1
 
+  "@types/css-tree@3.2.0": {}
+
   "@types/deep-eql@4.0.2": {}
 
   "@types/estree-jsx@1.0.5":
@@ -5533,6 +5556,8 @@ snapshots:
       csso: 5.0.5
       picocolors: 1.1.1
       sax: 1.6.1
+
+  tailwindcss@4.3.3: {}
 
   tiny-inflate@1.0.3: {}
 

@@ -105,6 +105,39 @@ supported extension. Git must also have a user name and email configured. A
 publish creates a local commit and production build; pushing to a remote and
 deploying remain the repository owner's existing workflow.
 
-Astro-CMS stores component identity and approved property values in JSON. It does
-not store generated HTML, arbitrary CSS, or JavaScript. The `.astro` files remain
-the authoritative responsive implementation.
+Astro-CMS stores component identity, content properties, and optional presentation
+overrides in JSON. The `.astro` files remain the renderer; generated HTML and
+executable JavaScript are not editable content.
+
+Select a component and open **Settings → Styles** to apply global CSS classes,
+standard Tailwind v4 utilities, or local CSS declarations. Use **Apply styles**
+to update the draft, then **Save changes** to keep the result. Local overrides
+can target all sizes, tablets (1023px and below), or phones (639px and below).
+**Reset styles** returns the component to the site's defaults. **Page
+stylesheets** references existing CSS URLs; CSS files stay developer-managed.
+
+**Settings → Content** supports bold, italic and underline on selected words,
+alignment for the entire text block, line spacing and letter spacing. With no
+words selected, the icons format the whole existing text block. In an empty
+text box, toggle emphasis before typing. Highlight words in the page preview
+or in the Content text box.
+Hold Alt while dragging a text component to reorder it, or use Move up/down.
+The emphasis shortcuts in the Content text box are Ctrl/Cmd+B, I and U. Clear formatting affects selected
+words, or the whole block when the cursor is collapsed. Reset spacing restores
+the site's line and letter spacing. Save changes to persist the result.
+
+For custom text components, set `formatting: true` on the manifest property,
+accept optional `cmsTextFormatting: Record<string, TextFormat[]>`, and use
+`formattedTextHtml(text, cmsTextFormatting?.text)` from
+`@astro-cms/core/formatting` in a `set:html` directive. Put
+`data-astro-cms-text={editorId ? "text" : undefined}` on the rendered text
+element so preview highlighting identifies the property. The helper escapes user
+content and emits only supported semantic marks and line breaks. Keep plain
+text in the original property; validated formatting ranges live in
+`node.styles.text`. The starter Heading and Text implement this contract.
+
+Starter components forward `cmsAttributes` to their styled root element and
+merge `cmsClass` into their own classes. Keep that forwarding when adapting
+components. Component defaults use `@layer astro-cms-defaults` so global class
+rules can override them. Tailwind utilities are generated from each document
+for preview and production, without loading a Tailwind browser runtime or reset.

@@ -132,6 +132,7 @@ function orderedNode(
     id: node.id,
     type: node.type,
     props,
+    ...(node.styles ? { styles: node.styles } : {}),
     ...(node.children
       ? { children: node.children.map((child) => orderedNode(child)) }
       : {}),
@@ -144,6 +145,9 @@ export function serializePageDocument(input: unknown): string {
     schemaVersion: document.schemaVersion,
     route: document.route,
     title: document.title,
+    ...(document.stylesheets?.length
+      ? { stylesheets: document.stylesheets }
+      : {}),
     ...(document.description === undefined
       ? {}
       : { description: document.description }),

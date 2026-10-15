@@ -1,5 +1,6 @@
 ---
 interface Props {
+  cmsAttributes?: Record<string, string>;
   gap?: "tight" | "normal" | "roomy";
   align?: "start" | "center";
   editorId?: string;
@@ -7,10 +8,12 @@ interface Props {
 }
 
 const { gap = "normal", align = "start", editorId, editorSlot } = Astro.props;
+const { class: cmsClass, ...cmsAttributes } = Astro.props.cmsAttributes ?? {};
 ---
 
 <div
-  class:list={["group", `group--${gap}`, `group--${align}`]}
+  {...cmsAttributes}
+  class:list={["group", `group--${gap}`, `group--${align}`, cmsClass]}
   data-astro-cms-node={editorId}
   data-astro-cms-slot={editorSlot}
 >
@@ -18,30 +21,32 @@ const { gap = "normal", align = "start", editorId, editorSlot } = Astro.props;
 </div>
 
 <style>
-  .group {
-    display: flex;
-    flex-direction: column;
-  }
+  @layer astro-cms-defaults {
+    .group {
+      display: flex;
+      flex-direction: column;
+    }
 
-  .group--tight {
-    gap: 0.75rem;
-  }
+    .group--tight {
+      gap: 0.75rem;
+    }
 
-  .group--normal {
-    gap: 1.5rem;
-  }
+    .group--normal {
+      gap: 1.5rem;
+    }
 
-  .group--roomy {
-    gap: 2.75rem;
-  }
+    .group--roomy {
+      gap: 2.75rem;
+    }
 
-  .group--start {
-    align-items: flex-start;
-    text-align: left;
-  }
+    .group--start {
+      align-items: flex-start;
+      text-align: left;
+    }
 
-  .group--center {
-    align-items: center;
-    text-align: center;
+    .group--center {
+      align-items: center;
+      text-align: center;
+    }
   }
 </style>

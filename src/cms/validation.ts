@@ -117,6 +117,21 @@ function validateComponentNodes(
     }
 
     const children = node.children ?? [];
+    for (const [name, ranges] of Object.entries(node.styles?.text ?? {})) {
+      const property = definition.properties[name];
+      const text = node.props[name];
+      if (
+        !property?.formatting ||
+        property.type !== "text" ||
+        typeof text !== "string" ||
+        ranges.some((range) => range.end > text.length)
+      ) {
+        issues.push({
+          nodeId: node.id,
+          message: `${definition.label}.${name} has invalid text formatting.`,
+        });
+      }
+    }
     if (!definition.acceptsChildren && children.length > 0) {
       issues.push({
         nodeId: node.id,

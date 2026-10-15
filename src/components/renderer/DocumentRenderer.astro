@@ -1,6 +1,12 @@
 ---
 import type { PageDocument } from "../../cms/document-types";
 import DocumentNode from "./DocumentNode.astro";
+import { localStylesCss } from "../../cms/component-styles";
+import {
+  cssForHtml,
+  pageTailwindClasses,
+  tailwindStyles,
+} from "../../cms/tailwind-styles";
 
 interface Props {
   document: PageDocument;
@@ -8,9 +14,15 @@ interface Props {
 }
 
 const { document, editorMode = false } = Astro.props;
+const css = cssForHtml(
+  `${await tailwindStyles(pageTailwindClasses(document.content))}\n${localStylesCss(document.content)}`,
+);
 ---
 
+{document.stylesheets?.map((href) => <link rel="stylesheet" href={href} />)}
+{css.trim() && <style is:inline set:html={css} />}
 <main
+  data-astro-cms-page=""
   data-astro-cms-document={editorMode ? document.route : undefined}
   data-astro-cms-slot={editorMode ? "default" : undefined}
 >

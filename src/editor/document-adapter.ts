@@ -18,6 +18,7 @@ export function nodeToEditorComponent(
     type: editorTypeFor(node.type),
     cmsId: node.id,
     cmsType: node.type,
+    cmsStyles: node.styles ? structuredClone(node.styles) : undefined,
     ...node.props,
     attributes: {
       class: "astro-cms-canvas-node",
@@ -55,6 +56,9 @@ export function editorComponentToNode(
     id: String(component.get("cmsId")),
     type,
     props,
+    ...(component.get("cmsStyles")
+      ? { styles: structuredClone(component.get("cmsStyles")) }
+      : {}),
     ...(children.length > 0 ? { children } : {}),
   };
 }

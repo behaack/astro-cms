@@ -52,6 +52,7 @@ export function cloneComponentNodeWithFreshIds(
     id: createId(),
     type: node.type,
     props: structuredClone(node.props),
+    ...(node.styles ? { styles: structuredClone(node.styles) } : {}),
     ...(node.children
       ? {
           children: node.children.map((child) =>

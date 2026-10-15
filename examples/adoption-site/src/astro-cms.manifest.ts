@@ -64,6 +64,7 @@ export const componentManifest = {
     properties: {
       text: {
         type: "text",
+        formatting: true,
         label: "Text",
         required: true,
         defaultValue: "A useful title",
@@ -88,6 +89,7 @@ export const componentManifest = {
     properties: {
       text: {
         type: "text",
+        formatting: true,
         label: "Text",
         required: true,
         defaultValue: "Add the supporting message.",

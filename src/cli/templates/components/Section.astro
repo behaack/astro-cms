@@ -1,5 +1,6 @@
 ---
 interface Props {
+  cmsAttributes?: Record<string, string>;
   tone?: "light" | "dark" | "accent";
   width?: "standard" | "narrow";
   editorId?: string;
@@ -12,10 +13,12 @@ const {
   editorId,
   editorSlot,
 } = Astro.props;
+const { class: cmsClass, ...cmsAttributes } = Astro.props.cmsAttributes ?? {};
 ---
 
 <section
-  class:list={["cms-section", `cms-section--${tone}`]}
+  {...cmsAttributes}
+  class:list={["cms-section", `cms-section--${tone}`, cmsClass]}
   data-astro-cms-node={editorId}
 >
   <div
@@ -27,34 +30,36 @@ const {
 </section>
 
 <style>
-  .cms-section {
-    padding: clamp(4rem, 10vw, 8rem) clamp(1.25rem, 5vw, 5rem);
-  }
+  @layer astro-cms-defaults {
+    .cms-section {
+      padding: clamp(4rem, 10vw, 8rem) clamp(1.25rem, 5vw, 5rem);
+    }
 
-  .cms-section--light {
-    color: #17201d;
-    background: #f4f6f2;
-  }
+    .cms-section--light {
+      color: #17201d;
+      background: #f4f6f2;
+    }
 
-  .cms-section--dark {
-    color: #f8faf8;
-    background: #17201d;
-  }
+    .cms-section--dark {
+      color: #f8faf8;
+      background: #17201d;
+    }
 
-  .cms-section--accent {
-    color: #10251e;
-    background: #b8e4cf;
-  }
+    .cms-section--accent {
+      color: #10251e;
+      background: #b8e4cf;
+    }
 
-  .cms-section__inner {
-    margin-inline: auto;
-  }
+    .cms-section__inner {
+      margin-inline: auto;
+    }
 
-  .cms-section__inner--standard {
-    max-width: 72rem;
-  }
+    .cms-section__inner--standard {
+      max-width: 72rem;
+    }
 
-  .cms-section__inner--narrow {
-    max-width: 46rem;
+    .cms-section__inner--narrow {
+      max-width: 46rem;
+    }
   }
 </style>

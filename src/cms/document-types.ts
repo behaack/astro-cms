@@ -15,10 +15,28 @@ export type {
 
 export type ComponentType = ManifestComponentType;
 
+export interface ComponentStyles {
+  classes?: string[];
+  tailwind?: string[];
+  css?: string;
+  tabletCss?: string;
+  phoneCss?: string;
+  text?: Record<string, TextFormat[]>;
+}
+
+export interface TextFormat {
+  start: number;
+  end: number;
+  bold?: true;
+  italic?: true;
+  underline?: true;
+}
+
 export interface ComponentNode {
   id: string;
   type: ComponentType;
   props: Record<string, PropertyValue>;
+  styles?: ComponentStyles;
   children?: ComponentNode[];
 }
 
@@ -39,6 +57,7 @@ export interface PageDocument {
   title: string;
   description?: string;
   seo?: PageSeoMetadata;
+  stylesheets?: string[];
   content: ComponentNode[];
 }
 

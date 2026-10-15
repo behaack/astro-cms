@@ -11,8 +11,18 @@ const { node, editorMode = false } = Astro.props;
 const Component = componentRegistry[node.type] as any;
 const componentProps = {
   ...node.props,
+  cmsTextFormatting: node.styles?.text,
   editorId: editorMode ? node.id : undefined,
   editorSlot: editorMode ? "default" : undefined,
+  cmsAttributes: node.styles
+    ? {
+        class: [
+          ...(node.styles.classes ?? []),
+          ...(node.styles.tailwind ?? []),
+        ].join(" "),
+        "data-cms-style": node.id,
+      }
+    : {},
 };
 ---
 

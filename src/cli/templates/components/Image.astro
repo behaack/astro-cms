@@ -1,5 +1,6 @@
 ---
 interface Props {
+  cmsAttributes?: Record<string, string>;
   src: string;
   alt: string;
   aspect?: "landscape" | "square";
@@ -7,38 +8,42 @@ interface Props {
 }
 
 const { src, alt, aspect = "landscape", editorId } = Astro.props;
+const { class: cmsClass, ...cmsAttributes } = Astro.props.cmsAttributes ?? {};
 ---
 
 <figure
-  class:list={["cms-image", `cms-image--${aspect}`]}
+  {...cmsAttributes}
+  class:list={["cms-image", `cms-image--${aspect}`, cmsClass]}
   data-astro-cms-node={editorId}
 >
   <img src={src} alt={alt} loading="lazy" />
 </figure>
 
 <style>
-  .cms-image {
-    width: 100%;
-    margin: 0;
-    overflow: hidden;
-    border: 1px solid rgb(255 255 255 / 24%);
-    border-radius: 1rem;
-    background: #e6efea;
-  }
+  @layer astro-cms-defaults {
+    .cms-image {
+      width: 100%;
+      margin: 0;
+      overflow: hidden;
+      border: 1px solid rgb(255 255 255 / 24%);
+      border-radius: 1rem;
+      background: #e6efea;
+    }
 
-  .cms-image--landscape {
-    aspect-ratio: 2 / 1;
-  }
+    .cms-image--landscape {
+      aspect-ratio: 2 / 1;
+    }
 
-  .cms-image--square {
-    max-width: 38rem;
-    aspect-ratio: 1;
-  }
+    .cms-image--square {
+      max-width: 38rem;
+      aspect-ratio: 1;
+    }
 
-  .cms-image img {
-    width: 100%;
-    height: 100%;
-    display: block;
-    object-fit: cover;
+    .cms-image img {
+      width: 100%;
+      height: 100%;
+      display: block;
+      object-fit: cover;
+    }
   }
 </style>
