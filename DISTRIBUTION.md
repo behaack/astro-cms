@@ -51,6 +51,12 @@ Set `ASTRO_CMS_PNPM_STORE_DIR` when verification should use a specific pnpm
 store. The generated `.package-verification` directory is intentionally
 disposable and ignored by Git.
 
+Archive consumers use the framework and tooling versions installed from this
+repository's lockfile. Fresh dependency resolution must not silently turn this
+baseline check into an Astro or Node upgrade. Passing verification establishes
+that recorded version combination; the wider peer dependency ranges still need
+separate compatibility testing.
+
 ## Install an archive
 
 In an Astro project:
@@ -199,6 +205,19 @@ export default defineConfig({
 
 The adopting site continues to own its `.astro` components, layouts, styles,
 content, public routes, and deployment adapter.
+
+For an existing sitemap, combine its filter with
+`createAstroCmsSitemapFilter` from `@astro-cms/core/search-discovery`. Set
+`publicRoutePrefix` to the mount point of the CMS pages (for example,
+`/astro-cms-demo`), or omit it when document routes are public routes. A page
+must pass both the existing filter and the CMS filter. An unused import alone
+does not establish this policy.
+
+Keep any existing `robots.txt` and add the absolute `sitemap-index.xml` URL to
+its sitemap declarations. Automatic initialization refuses an existing
+`public/robots.txt` or an alternative `src/pages/robots.txt` route before
+writing starter files; use this manual integration path to retain that crawl
+policy.
 
 Use `injectRoutes: "dev-only"` for the local-first workflow. Setting it to
 `true` also includes the editor and filesystem write APIs in production; do not

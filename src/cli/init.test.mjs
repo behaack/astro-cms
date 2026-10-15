@@ -131,6 +131,51 @@ export default defineConfig({
     expect(result.source).toContain("astroCms({");
   });
 
+  it.each([
+    ["createAstroCmsSitemapFilter", "createAstroCmsSitemapFilter"],
+    ["createAstroCmsSitemapFilter as cmsFilter", "cmsFilter"],
+  ])(
+    "reuses an existing %s import when adding sitemap discovery",
+    (binding, identifier) => {
+      const source = `import { ${binding} } from "@astro-cms/core/search-discovery";
+import { defineConfig } from "astro/config";
+export default defineConfig({});
+`;
+
+      const result = patchAstroConfig(source);
+
+      expect(result.source).toContain(`filter: ${identifier}({`);
+      expect(
+        result.source.match(/from "@astro-cms\/core\/search-discovery"/g),
+      ).toHaveLength(1);
+    },
+  );
+
+  it("does not treat an unused discovery import as an existing sitemap policy", () => {
+    const source = `import sitemap from "@astrojs/sitemap";
+import { createAstroCmsSitemapFilter } from "@astro-cms/core/search-discovery";
+import { defineConfig } from "astro/config";
+export default defineConfig({ integrations: [sitemap()] });
+`;
+
+    expect(() => patchAstroConfig(source)).toThrow(
+      "already has a sitemap integration",
+    );
+  });
+
+  it("does not treat a discovery comment as an existing import", () => {
+    const source = `// import { createAstroCmsSitemapFilter } from "@astro-cms/core/search-discovery";
+import { defineConfig } from "astro/config";
+export default defineConfig({});
+`;
+
+    const result = patchAstroConfig(source);
+
+    expect(result.source).toContain(
+      'import { createAstroCmsSitemapFilter as createAstroCmsSitemapFilter } from "@astro-cms/core/search-discovery";',
+    );
+  });
+
   it("rejects computed configuration functions", () => {
     expect(() =>
       patchAstroConfig(
@@ -215,6 +260,37 @@ describe("project initialization", () => {
       ),
     ).rejects.toThrow();
   });
+
+  it.each([
+    "public/robots.txt",
+    "src/pages/robots.txt.js",
+    "src/pages/robots.txt/index.ts",
+    "src/pages/robots.txt.astro",
+  ])(
+    "preserves an adopter-owned %s before writing any starter files",
+    async (relativePath) => {
+      const projectDirectory = await createProject();
+      const robotsPath = path.join(projectDirectory, relativePath);
+      const robotsSource = "User-agent: *\nDisallow: /private\n";
+      await mkdir(path.dirname(robotsPath), { recursive: true });
+      await writeFile(robotsPath, robotsSource, "utf8");
+      const configPath = path.join(projectDirectory, "astro.config.mjs");
+      const originalConfig = await readFile(configPath, "utf8");
+
+      await expect(initializeProject(projectDirectory)).rejects.toThrow(
+        "already owns robots.txt",
+      );
+
+      expect(await readFile(robotsPath, "utf8")).toBe(robotsSource);
+      expect(await readFile(configPath, "utf8")).toBe(originalConfig);
+      await expect(
+        readFile(
+          path.join(projectDirectory, "src/astro-cms.manifest.ts"),
+          "utf8",
+        ),
+      ).rejects.toThrow();
+    },
+  );
 
   it("explains missing direct project dependencies", async () => {
     const projectDirectory = await createProject({

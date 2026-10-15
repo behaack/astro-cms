@@ -3,6 +3,7 @@ import {
   access,
   mkdir,
   readFile,
+  readdir,
   rename,
   rm,
   stat,
@@ -156,6 +157,27 @@ function defaultImportIdentifier(source, packageName) {
   return match?.[1];
 }
 
+function namedImportIdentifier(source, packageName, exportName) {
+  const escapedPackageName = packageName.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const imports = source.matchAll(
+    new RegExp(
+      `\\bimport\\s*\\{([^}]+)\\}\\s*from\\s*["']${escapedPackageName}["']`,
+      "g",
+    ),
+  );
+  const masked = maskNonCode(source);
+  for (const match of imports) {
+    if (!masked.startsWith("import", match.index)) continue;
+    for (const specifier of match[1].split(",")) {
+      const binding = specifier
+        .trim()
+        .match(new RegExp(`^${exportName}(?:\\s+as\\s+([A-Za-z_$][\\w$]*))?$`));
+      if (binding) return binding[1] ?? exportName;
+    }
+  }
+  return undefined;
+}
+
 function availableIdentifier(source, preferred) {
   const masked = maskNonCode(source);
   if (!new RegExp(`\\b${preferred}\\b`).test(masked)) return preferred;
@@ -255,14 +277,27 @@ export function patchAstroConfig(source) {
     source,
     "@astrojs/sitemap",
   );
-  const hasSitemapCall =
-    existingSitemapIdentifier &&
-    new RegExp(`\\b${existingSitemapIdentifier}\\s*\\(`).test(
-      maskNonCode(source),
-    );
-  const hasSearchDiscoveryFilter = source.includes(
+  const existingSearchFilterIdentifier = namedImportIdentifier(
+    source,
     "@astro-cms/core/search-discovery",
+    "createAstroCmsSitemapFilter",
   );
+  const masked = maskNonCode(source);
+  const sitemapCall = existingSitemapIdentifier
+    ? new RegExp(`\\b${existingSitemapIdentifier}\\s*\\(`).exec(masked)
+    : undefined;
+  const sitemapOptions = sitemapCall
+    ? masked.slice(
+        sitemapCall.index,
+        findMatching(masked, masked.indexOf("(", sitemapCall.index), "(", ")") +
+          1,
+      )
+    : "";
+  const hasSearchDiscoveryFilter =
+    existingSearchFilterIdentifier &&
+    new RegExp(`\\b${existingSearchFilterIdentifier}\\s*\\(`).test(
+      sitemapOptions,
+    );
   const cmsAlreadyCalled =
     existingCmsIdentifier &&
     new RegExp(`\\b${existingCmsIdentifier}\\s*\\(`).test(maskNonCode(source));
@@ -270,7 +305,7 @@ export function patchAstroConfig(source) {
   if (cmsAlreadyCalled) {
     return { source, changed: false, alreadyConfigured: true };
   }
-  if (hasSitemapCall && !hasSearchDiscoveryFilter) {
+  if (sitemapCall && !hasSearchDiscoveryFilter) {
     throw new AstroCmsInitError(
       'The Astro config already has a sitemap integration. Initialization stopped so Astro-CMS does not replace its existing route policy. Add createAstroCmsSitemapFilter({ publicRoutePrefix: "/astro-cms-demo" }) to that integration, then run the initializer again.',
     );
@@ -282,11 +317,9 @@ export function patchAstroConfig(source) {
     existingReactIdentifier ?? availableIdentifier(source, "react");
   const sitemapIdentifier =
     existingSitemapIdentifier ?? availableIdentifier(source, "sitemap");
-  const searchFilterIdentifier = availableIdentifier(
-    source,
-    "createAstroCmsSitemapFilter",
-  );
-  const masked = maskNonCode(source);
+  const searchFilterIdentifier =
+    existingSearchFilterIdentifier ??
+    availableIdentifier(source, "createAstroCmsSitemapFilter");
   const defineConfigMatch = /\bdefineConfig\s*\(/.exec(masked);
   if (!defineConfigMatch) {
     throw new AstroCmsInitError(
@@ -315,7 +348,7 @@ export function patchAstroConfig(source) {
     existingReactIdentifier &&
     new RegExp(`\\b${existingReactIdentifier}\\s*\\(`).test(masked);
   const includeReact = !reactAlreadyCalled;
-  const includeSitemap = !hasSitemapCall;
+  const includeSitemap = !sitemapCall;
   let patched;
 
   if (integrationsOpen !== undefined) {
@@ -373,7 +406,7 @@ export function patchAstroConfig(source) {
   if (!existingSitemapIdentifier) {
     imports.push(`import ${sitemapIdentifier} from "@astrojs/sitemap";`);
   }
-  if (!hasSearchDiscoveryFilter) {
+  if (!existingSearchFilterIdentifier && includeSitemap) {
     imports.push(
       `import { createAstroCmsSitemapFilter as ${searchFilterIdentifier} } from "@astro-cms/core/search-discovery";`,
     );
@@ -469,6 +502,24 @@ export async function createInitPlan(targetDirectory = process.cwd()) {
   const configPath = await locateAstroConfig(projectDirectory);
   const originalConfig = await readFile(configPath, "utf8");
   const configPatch = patchAstroConfig(originalConfig);
+  const publicRobotsPath = path.join(projectDirectory, "public", "robots.txt");
+  const pagesDirectory = path.join(projectDirectory, "src", "pages");
+  const pageEntries = (await pathExists(pagesDirectory))
+    ? await readdir(pagesDirectory)
+    : [];
+  const conflictingRobotsRoutes = pageEntries.filter(
+    (entry) =>
+      entry === "robots.txt" ||
+      (entry.startsWith("robots.txt.") && entry !== "robots.txt.ts"),
+  );
+  if (
+    (await pathExists(publicRobotsPath)) ||
+    conflictingRobotsRoutes.length > 0
+  ) {
+    throw new AstroCmsInitError(
+      "Initialization stopped without changes because the project already owns robots.txt. Keep its crawl policy and add the generated sitemap URL manually; use the manual integration guide instead of creating a second robots route.",
+    );
+  }
   const creates = [];
   const unchanged = [];
   const conflicts = [];

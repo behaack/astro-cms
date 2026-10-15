@@ -138,6 +138,24 @@ await runPnpm(
 const rootManifest = JSON.parse(
   await readFile(path.join(projectDirectory, "package.json"), "utf8"),
 );
+
+async function pinnedProjectDependencies(dependencies) {
+  return Object.fromEntries(
+    await Promise.all(
+      Object.entries(dependencies).map(async ([name, specifier]) => {
+        if (name === rootManifest.name) return [name, specifier];
+        const installedManifest = JSON.parse(
+          await readFile(
+            path.join(projectDirectory, "node_modules", name, "package.json"),
+            "utf8",
+          ),
+        );
+        return [name, installedManifest.version];
+      }),
+    ),
+  );
+}
+
 const archiveName = `${rootManifest.name.replace(/^@/, "").replace("/", "-")}-${rootManifest.version}.tgz`;
 const archivePath = path.join(verificationDirectory, archiveName);
 if (!(await pathExists(archivePath))) {
@@ -162,6 +180,12 @@ consumerManifest.name = "astro-cms-tarball-consumer";
 consumerManifest.dependencies["@astro-cms/core"] = `file:../${archiveName}`;
 delete consumerManifest.dependencies.grapesjs;
 delete consumerManifest.dependencies.zod;
+consumerManifest.dependencies = await pinnedProjectDependencies(
+  consumerManifest.dependencies,
+);
+consumerManifest.devDependencies = await pinnedProjectDependencies(
+  consumerManifest.devDependencies,
+);
 await writeFile(
   consumerManifestPath,
   `${JSON.stringify(consumerManifest, null, 2)}\n`,
@@ -276,6 +300,12 @@ const initializerManifest = {
     typescript: rootManifest.devDependencies.typescript,
   },
 };
+initializerManifest.dependencies = await pinnedProjectDependencies(
+  initializerManifest.dependencies,
+);
+initializerManifest.devDependencies = await pinnedProjectDependencies(
+  initializerManifest.devDependencies,
+);
 await writeFile(
   path.join(initializerDirectory, "package.json"),
   `${JSON.stringify(initializerManifest, null, 2)}\n`,

@@ -17,6 +17,11 @@ this repository for the first three sessions.
 
 ## Setup before each session
 
+Use a disposable local clone for participant sessions so resets and local
+publishing commits stay separate from development work. Install dependencies
+with `pnpm install --frozen-lockfile` at the clone's root before the first
+session. The clone needs a configured local Git author and an initial commit.
+
 From `examples/adoption-site`:
 
 ```bash
@@ -27,7 +32,12 @@ pnpm dev
 Open `http://localhost:4331/admin`. Give the participant only
 [`PILOT-TASK.md`](./examples/adoption-site/PILOT-TASK.md). Do not explain the
 component hierarchy, property panel, page tree, templates, preview sizes, or
-save/build controls in advance.
+save/publish controls in advance.
+
+The current controls are **Save changes**, **Review & publish**, and the
+review dialog's **Publish this change**. Saving updates the local page file.
+Publishing verifies a production build and creates a local Git commit; it
+does not push or deploy. These are moderator notes, not participant training.
 
 The reset command intentionally replaces the pilot fixture's page and template
 files. Never run it in a real site.
@@ -64,7 +74,7 @@ Record these facts, not general impressions:
 | Phone preview deliberately opened                            |        |
 | Page saved successfully                                      |        |
 | Production build prepared successfully                       |        |
-| Correctly explained that build is not deployment             |        |
+| Correctly explained that local publishing is not deployment  |        |
 | Moderator prompts                                            |        |
 | Moderator rescues                                            |        |
 | Invalid states encountered and recovered from                |        |
@@ -85,7 +95,7 @@ Ask these after the task:
 2. At what point did you feel confident—or not confident—that you were editing
    the real page?
 3. What did you expect “Save changes” to do?
-4. What did you expect “Build for publishing” to do?
+4. What did you expect “Review & publish” and “Publish this change” to do?
 5. If you wanted to create a second section, where would you start?
 6. What, if anything, felt more restrictive than the page editors you use now?
 7. Would these restrictions make you feel safer or merely slower?
@@ -94,7 +104,7 @@ Ask these after the task:
 
 - **Proceed:** at least two of the first three participants complete every core
   content change, save, and phone check within 10 minutes with no rescue. At
-  least two correctly explain that building is not deployment.
+  least two correctly explain that local publishing is not deployment.
 - **Iterate and retest:** participants understand the component model but share
   recoverable problems with labels, selection, insertion, or state feedback.
 - **Rethink the interaction:** two or more participants cannot discover the
