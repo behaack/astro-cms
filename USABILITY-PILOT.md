@@ -32,6 +32,11 @@ save/build controls in advance.
 The reset command intentionally replaces the pilot fixture's page and template
 files. Never run it in a real site.
 
+Create one durable session record in
+[`USABILITY-PILOT-RESULTS.md`](./USABILITY-PILOT-RESULTS.md). Record facts during
+the session rather than reconstructing them afterward. Do not enter names,
+email addresses, recordings, or other unnecessary personal information.
+
 ## Moderator protocol
 
 1. Say: “This is an early page editor. Please complete the campaign brief and
@@ -59,6 +64,7 @@ Record these facts, not general impressions:
 | Phone preview deliberately opened                            |        |
 | Page saved successfully                                      |        |
 | Production build prepared successfully                       |        |
+| Correctly explained that build is not deployment             |        |
 | Moderator prompts                                            |        |
 | Moderator rescues                                            |        |
 | Invalid states encountered and recovered from                |        |

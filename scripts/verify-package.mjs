@@ -115,6 +115,19 @@ function assertSingleMatch(source, pattern, label) {
   }
 }
 
+function assertSitemapRoute(source, route, expectedCount) {
+  const escapedRoute = route.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const matches = source.match(
+    new RegExp(`<loc>https://example\\.com${escapedRoute}/?</loc>`, "g"),
+  );
+  const actualCount = matches?.length ?? 0;
+  if (actualCount !== expectedCount) {
+    throw new Error(
+      `Expected ${route} ${expectedCount} time(s) in the sitemap; found ${actualCount}.`,
+    );
+  }
+}
+
 await rm(verificationDirectory, { recursive: true, force: true });
 await mkdir(verificationDirectory, { recursive: true });
 await runPnpm(
@@ -181,6 +194,7 @@ for (const requiredPath of [
   "src/cli/templates/manifest.ts",
   "src/cli/templates/components/AstroCmsSeoHead.astro",
   "src/cli/templates/pages/astro-cms-demo/[...path].astro",
+  "src/cli/templates/pages/robots.txt.ts",
   "src/cms/git-publisher.ts",
   "src/components/renderer/DocumentRenderer.astro",
   "src/pages/api/change-review.ts",
@@ -189,6 +203,7 @@ for (const requiredPath of [
   "src/pages/api/publish.ts",
   "src/cms/local-asset-store.ts",
   "src/cms/seo-metadata.ts",
+  "src/cms/search-discovery.ts",
 ]) {
   if (!(await pathExists(path.join(installedPackageDirectory, requiredPath)))) {
     throw new Error(`Required package file is missing: ${requiredPath}`);
@@ -218,6 +233,12 @@ if (installedManifest.exports?.["./git"] !== "./src/cms/git-publisher.ts") {
 if (installedManifest.exports?.["./seo"] !== "./src/cms/seo-metadata.ts") {
   throw new Error("The package does not expose the SEO metadata resolver.");
 }
+if (
+  installedManifest.exports?.["./search-discovery"] !==
+  "./src/cms/search-discovery.ts"
+) {
+  throw new Error("The package does not expose search-discovery helpers.");
+}
 
 const serverEntry = await readFile(
   path.join(consumerDirectory, "dist", "server", "entry.mjs"),
@@ -242,6 +263,7 @@ const initializerManifest = {
   dependencies: {
     "@astro-cms/core": `file:../${archiveName}`,
     "@astrojs/react": rootManifest.peerDependencies["@astrojs/react"],
+    "@astrojs/sitemap": rootManifest.peerDependencies["@astrojs/sitemap"],
     astro: rootManifest.peerDependencies.astro,
     react: rootManifest.peerDependencies.react,
     "react-dom": rootManifest.peerDependencies["react-dom"],
@@ -332,6 +354,50 @@ await runGit(
 await runGit(["add", "."], initializerDirectory);
 await runGit(["commit", "-m", "initial website"], initializerDirectory);
 
+const initializedHomeDocument = JSON.parse(
+  await readFile(
+    path.join(initializerDirectory, "content", "pages", "home.json"),
+    "utf8",
+  ),
+);
+const campaignsDirectory = path.join(
+  initializerDirectory,
+  "content",
+  "pages",
+  "campaigns",
+);
+await mkdir(campaignsDirectory, { recursive: true });
+await writeFile(
+  path.join(campaignsDirectory, "summer.json"),
+  `${JSON.stringify(
+    {
+      ...initializedHomeDocument,
+      route: "/campaigns/summer",
+      title: "Summer campaign",
+    },
+    null,
+    2,
+  )}\n`,
+  "utf8",
+);
+await writeFile(
+  path.join(initializerDirectory, "content", "pages", "private.json"),
+  `${JSON.stringify(
+    {
+      ...initializedHomeDocument,
+      route: "/private",
+      title: "Private page",
+      seo: {
+        ...initializedHomeDocument.seo,
+        searchVisibility: "noindex",
+      },
+    },
+    null,
+    2,
+  )}\n`,
+  "utf8",
+);
+
 await runPnpm(["check"], initializerDirectory);
 await runPnpm(["build"], initializerDirectory);
 for (const generatedPath of [
@@ -340,10 +406,14 @@ for (const generatedPath of [
   "src/components/AstroCmsSeoHead.astro",
   "src/pages/astro-cms-demo.astro",
   "src/pages/astro-cms-demo/[...path].astro",
+  "src/pages/robots.txt.ts",
   "src/components/cms/Image.astro",
   "public/astro-cms-placeholder.svg",
   "content/pages/home.json",
   "dist/astro-cms-demo/index.html",
+  "dist/robots.txt",
+  "dist/sitemap-index.xml",
+  "dist/sitemap-0.xml",
   "dist/astro-cms-placeholder.svg",
 ]) {
   if (!(await pathExists(path.join(initializerDirectory, generatedPath)))) {
@@ -391,6 +461,76 @@ assertMatch(
   /<title>Native Astro pages, safely assembled<\/title>/,
   "The generated page did not use its SEO title.",
 );
+
+const initializedRobotsText = await readFile(
+  path.join(initializerDirectory, "dist", "robots.txt"),
+  "utf8",
+);
+if (
+  initializedRobotsText !==
+  "User-agent: *\nAllow: /\n\nSitemap: https://example.com/sitemap-index.xml\n"
+) {
+  throw new Error(
+    "The initialized robots.txt does not expose the sitemap URL.",
+  );
+}
+
+const initializedSitemapIndex = await readFile(
+  path.join(initializerDirectory, "dist", "sitemap-index.xml"),
+  "utf8",
+);
+assertMatch(
+  initializedSitemapIndex,
+  /https:\/\/example\.com\/sitemap-0\.xml/,
+  "The sitemap index does not reference its generated sitemap.",
+);
+const initializedSitemap = await readFile(
+  path.join(initializerDirectory, "dist", "sitemap-0.xml"),
+  "utf8",
+);
+assertSingleMatch(
+  initializedSitemap,
+  /<loc>https:\/\/example\.com\/astro-cms-demo\/?<\/loc>/,
+  "public Astro-CMS route",
+);
+assertSitemapRoute(initializedSitemap, "/astro-cms-demo/campaigns/summer", 1);
+assertSitemapRoute(initializedSitemap, "/astro-cms-demo/private", 0);
+for (const excludedRoute of ["/admin", "/preview", "/api/"]) {
+  if (initializedSitemap.includes(excludedRoute)) {
+    throw new Error(`The sitemap exposed a private route: ${excludedRoute}`);
+  }
+}
+
+await rm(path.join(campaignsDirectory, "summer.json"));
+await writeFile(
+  path.join(campaignsDirectory, "autumn.json"),
+  `${JSON.stringify(
+    {
+      ...initializedHomeDocument,
+      route: "/campaigns/autumn",
+      title: "Autumn campaign",
+    },
+    null,
+    2,
+  )}\n`,
+  "utf8",
+);
+await runPnpm(["build"], initializerDirectory);
+const renamedSitemap = await readFile(
+  path.join(initializerDirectory, "dist", "sitemap-0.xml"),
+  "utf8",
+);
+assertSitemapRoute(renamedSitemap, "/astro-cms-demo/campaigns/summer", 0);
+assertSitemapRoute(renamedSitemap, "/astro-cms-demo/campaigns/autumn", 1);
+
+await rm(path.join(campaignsDirectory, "autumn.json"));
+await runPnpm(["build"], initializerDirectory);
+const retiredSitemap = await readFile(
+  path.join(initializerDirectory, "dist", "sitemap-0.xml"),
+  "utf8",
+);
+assertSitemapRoute(retiredSitemap, "/astro-cms-demo/campaigns/autumn", 0);
+assertSitemapRoute(retiredSitemap, "/astro-cms-demo/private", 0);
 assertMatch(
   initializedDemoHtml,
   /<meta name="description" content="A constrained visual editor for pages built from approved native Astro components\."/,

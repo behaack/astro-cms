@@ -948,7 +948,7 @@ This removes manual scaffolding as the next technical adoption blocker. The next
   reporting plus guarded unpublished and tracked-upload removal.
 - Add image replacement, optimization, dimensions, and file-size metadata.
 
-### Phase 3.5 — Search Discovery and SEO Metadata (In Progress)
+### Phase 3.5 — Search Discovery and SEO Metadata (Complete)
 
 This phase adds search readiness without turning Astro-CMS into an SEO analysis
 service or introducing a second rendering system.
@@ -975,7 +975,18 @@ service or introducing a second rendering system.
   canonical URL, Open Graph values, absolute social image, and Twitter card,
   while the adopter's existing homepage remained unchanged and `/admin` stayed
   out of production output.
-- **Next:** make sitemap and `robots.txt` consume the same visibility policy.
+- **Implemented:** a configuration-safe saved-page discovery helper feeds
+  Astro's official sitemap integration, while a native prerendered
+  `robots.txt` route points to the absolute sitemap index. Public route prefixes,
+  `noindex` pages, and private editor/API paths use one deterministic policy.
+- **Implemented safely:** the initializer adds the official integration,
+  visibility filter, and robots route only when those paths and policies are
+  unowned. Existing sitemap or robots systems stop initialization before any
+  write and receive adaptation guidance rather than being overwritten.
+- **Proven from the package archive:** fresh production builds include each
+  public CMS route exactly once, omit `noindex`, editor, preview, API, and
+  retired routes, update after create and rename transitions, and emit a
+  deterministic text/plain `robots.txt` pointing to the sitemap index.
 
 #### Recommended Integration Choices
 
@@ -1040,15 +1051,15 @@ service or introducing a second rendering system.
 
 #### Acceptance Proof
 
-1. Create, publish, rename, and retire a page; after each production build, the
+1. **Proven for the archive-installed starter:** create, rename, and retire a page; after each production build, the
    sitemap contains exactly the current public canonical route.
 2. **Proven for the archive-installed starter:** inspect generated HTML and
    prove exactly one title, description, canonical, robots policy, Open Graph
    title, and Twitter title, with the full edited metadata also verified in a
    browser-rendered native Astro page.
-3. Prove `robots.txt` points to the generated sitemap and that preview/editor
+3. **Proven:** `robots.txt` points to the generated sitemap and preview/editor
    routes are absent from the sitemap and protected from indexing.
-4. Prove a `noindex` page is absent from the sitemap while remaining available
+4. **Proven:** a `noindex` page is absent from the sitemap while remaining available
    for intentional direct preview.
 5. **Proven:** the archive-installed consumer and initializer-consumer checks
    pass, so the implemented metadata slice is verified in an adopting Astro

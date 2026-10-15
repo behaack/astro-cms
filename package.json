@@ -38,6 +38,7 @@
     "./renderer": "./src/components/renderer/DocumentRenderer.astro",
     "./store": "./src/cms/local-page-store.ts",
     "./seo": "./src/cms/seo-metadata.ts",
+    "./search-discovery": "./src/cms/search-discovery.ts",
     "./git": "./src/cms/git-publisher.ts",
     "./types": "./src/cms/document-types.ts",
     "./contract": "./src/cms/component-contract.ts",
@@ -63,6 +64,7 @@
   },
   "peerDependencies": {
     "@astrojs/react": "^6.0.2",
+    "@astrojs/sitemap": "^3.7.3",
     "astro": "^7.2.2",
     "react": "^19.2.8",
     "react-dom": "^19.2.8"
@@ -71,6 +73,7 @@
     "@astrojs/check": "^0.9.10",
     "@astrojs/node": "^11.1.2",
     "@astrojs/react": "^6.0.2",
+    "@astrojs/sitemap": "^3.7.3",
     "@types/node": "^26.2.0",
     "@types/react": "^19.2.18",
     "@types/react-dom": "^19.2.4",

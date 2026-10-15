@@ -12,14 +12,15 @@ The archive exposes:
 - `@astro-cms/core/renderer`
 - `@astro-cms/core/store`
 - `@astro-cms/core/seo`
+- `@astro-cms/core/search-discovery`
 - `@astro-cms/core/git`
 - `@astro-cms/core/types`
 - `@astro-cms/core/contract`
 - the `astro-cms` command
 
-GrapesJS and Zod are package runtime dependencies. Astro, the Astro React
-integration, React, and React DOM are peer dependencies so an adopting site
-uses one framework installation.
+GrapesJS and Zod are package runtime dependencies. Astro, the Astro React and
+sitemap integrations, React, and React DOM are peer dependencies so an adopting
+site uses one framework installation.
 
 ## Create and verify the archive
 
@@ -43,6 +44,8 @@ pnpm verify:package
 11. Confirms the initializer preserves the existing page and becomes a no-op on its second run.
 12. Type-checks and builds the generated project, including its route-backed native pages, while confirming that the adopter's existing homepage remains unchanged.
 13. Inspects the generated production HTML and asserts one expected title, description, robots policy, canonical URL, Open Graph title, and Twitter title.
+14. Verifies deterministic `robots.txt` output and one canonical sitemap entry for each public CMS page while `noindex`, admin, preview, and API routes remain absent.
+15. Creates, renames, and retires a CMS page across production builds and proves each sitemap reflects the current saved routes without manual edits.
 
 Set `ASTRO_CMS_PNPM_STORE_DIR` when verification should use a specific pnpm
 store. The generated `.package-verification` directory is intentionally
@@ -54,7 +57,7 @@ In an Astro project:
 
 ```bash
 pnpm add ./astro-cms-core-0.1.0.tgz
-pnpm add astro @astrojs/react react react-dom
+pnpm add astro @astrojs/react @astrojs/sitemap react react-dom
 ```
 
 Review and create the starter integration:
@@ -73,15 +76,18 @@ The initializer creates:
 - `src/components/AstroCmsSeoHead.astro`
 - the isolated `src/pages/astro-cms-demo.astro` route
 - `src/pages/astro-cms-demo/[...path].astro` for additional page documents
+- `src/pages/robots.txt.ts` for deterministic sitemap discovery
 - `content/pages/home.json`
 - `ASTRO-CMS.md` with project-specific next steps
 
-It also adds React and Astro-CMS to a conventional `defineConfig({...})`
+It also adds React, Astro's official sitemap integration, the shared CMS
+visibility filter, and Astro-CMS to a conventional `defineConfig({...})`
 integration array. Existing integrations and pages are preserved. Running it a
 second time makes no changes. If any generated path already contains different
-content, if required direct dependencies are missing, or if the Astro config is
-computed or nonstandard, the command stops before writing. There is deliberately
-no force-overwrite option.
+content, if the adopter already owns sitemap or `robots.txt` policy, if required
+direct dependencies are missing, or if the Astro config is computed or
+nonstandard, the command stops before writing. There is deliberately no
+force-overwrite option.
 
 The generated page is a safe demonstration, not a replacement for the adopting
 site's homepage. Once it accurately uses the site's components and layout, the

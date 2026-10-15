@@ -2,7 +2,7 @@
 
 This repository starts the feasibility prototype described in [`astro-cms-project-plan.md`](./astro-cms-project-plan.md).
 
-The scaffold proves eighteen independent foundations:
+The scaffold proves nineteen independent foundations:
 
 1. A neutral, validated component document can render through native `.astro` components with no public editor runtime.
 2. GrapesJS Core can manipulate that neutral component structure without becoming the canonical renderer or persistence format.
@@ -22,6 +22,7 @@ The scaffold proves eighteen independent foundations:
 16. Editors can retire non-home pages only after incoming links from every saved page and reusable template have been cleared; unpublished drafts are removed directly, while published routes use an isolated, build-verified Git deletion commit with rollback.
 17. Editors can rename non-home page routes while every manifest-approved internal link in saved pages and reusable templates is rewritten automatically, preserving query strings and fragments; tracked renames are production-built and committed as one isolated, rollback-safe change.
 18. Marketing users can edit constrained search and sharing metadata, choose a protected project image, preview the result, review the changes in plain language, and publish native Astro head tags from an archive-installed fresh website.
+19. Public page discovery uses Astro's official sitemap integration and a native `robots.txt` route driven by the same saved-page visibility policy; archive-installed builds prove create, rename, retire, `noindex`, and private-route exclusions without replacing adopter-owned discovery configuration.
 
 ## Run it
 
@@ -62,7 +63,7 @@ Its three-path integration configuration and verified workflow are documented in
 
 ## Package distribution proof
 
-`@astro-cms/core@0.1.0` now produces a clean package archive with explicit exports, runtime dependencies, Astro/React peer dependencies, MIT licensing, and prepack checks. `pnpm verify:package` installs that archive into ignored, non-workspace consumers, type-checks and builds them, confirms that production excludes the editor route, preserves the adopter's existing homepage, and asserts the generated title, description, robots, canonical, Open Graph, and Twitter metadata.
+`@astro-cms/core@0.1.0` now produces a clean package archive with explicit exports, runtime dependencies, Astro/React/sitemap peer dependencies, MIT licensing, and prepack checks. `pnpm verify:package` installs that archive into ignored, non-workspace consumers, type-checks and builds them, confirms that production excludes the editor route, preserves the adopter's existing homepage, and asserts the generated metadata, sitemap lifecycle, and `robots.txt` discovery contract.
 
 The archive contract, installation example, safety boundary, and remaining release gaps are documented in [`DISTRIBUTION.md`](./DISTRIBUTION.md).
 
@@ -82,6 +83,7 @@ Commit the initialized files once, then **Review & publish** in `/admin` provide
 ## Usability gate
 
 The next decision is human rather than architectural. [`USABILITY-PILOT.md`](./USABILITY-PILOT.md) contains the moderator protocol, objective measures, and go/iterate/rethink rule. The independent fixture includes a participant-facing campaign brief and a deterministic `pnpm pilot:reset` command so each session begins from the same content.
+Record the three eligible sessions in [`USABILITY-PILOT-RESULTS.md`](./USABILITY-PILOT-RESULTS.md); it deliberately remains **Not yet run** until real participant observations exist.
 
 ## Current boundary
 
@@ -108,4 +110,4 @@ Manifest properties marked as `image` retain a normal inspectable string path bu
 
 No GrapesJS adapter, React renderer, document type list, schema enum, palette, or Astro registry file should be edited. The production build fails if a manifested primitive does not have a matching Astro file.
 
-In-memory live-preview drafts still expire after 30 minutes and disappear when the server restarts. The project-file save and upload paths are intentionally local-first and assume a writable filesystem; hosted and serverless persistence remains future work. Git publishing covers the selected tracked or newly created page plus newly referenced uploads and requires a repository baseline plus a configured Git identity. Route renaming now updates known saved internal links, but it deliberately does not create redirect aliases for external bookmarks, search indexes, or links outside the project; that redirect policy remains developer-owned. Deletion uses a conservative incoming-link check and isolated Git history. Page documents now support validated, versioned SEO metadata; the marketing-facing form and previews are implemented; and adopter-owned native Astro head components render canonical, robots, Open Graph, and Twitter/X tags when Astro's `site` URL is configured. Sitemap and `robots.txt` generation, image replacement, optimization, dimensions and file-size metadata, and cross-document replacement remain future work. Linked reusable components, interactive Astro islands, authentication, remote push/deployment integration, and multi-user isolation also remain future work. The package archive, initializer, generated SEO head, browser save, local Git publish, and preservation of an existing adopter homepage are proven locally; registry publication, stable versioning, migrations, support for nonstandard Astro configs, and cross-version compatibility have not been proven.
+In-memory live-preview drafts still expire after 30 minutes and disappear when the server restarts. The project-file save and upload paths are intentionally local-first and assume a writable filesystem; hosted and serverless persistence remains future work. Git publishing covers the selected tracked or newly created page plus newly referenced uploads and requires a repository baseline plus a configured Git identity. Route renaming now updates known saved internal links, but it deliberately does not create redirect aliases for external bookmarks, search indexes, or links outside the project; that redirect policy remains developer-owned. Deletion uses a conservative incoming-link check and isolated Git history. Page documents support validated, versioned SEO metadata; adopter-owned native Astro head components render canonical, robots, Open Graph, and Twitter/X tags; and the initializer configures sitemap and `robots.txt` discovery from the same visibility policy when Astro's `site` URL is configured. Image replacement, optimization, dimensions and file-size metadata, and cross-document replacement remain future work. Linked reusable components, interactive Astro islands, authentication, remote push/deployment integration, and multi-user isolation also remain future work. The package archive, initializer, generated search outputs, browser save, local Git publish, and preservation of an existing adopter homepage are proven locally; registry publication, stable versioning, migrations, support for nonstandard Astro configs, and cross-version compatibility have not been proven.

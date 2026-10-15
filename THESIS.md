@@ -52,6 +52,7 @@ fresh-site SEO workflow was verified on 2026-08-16.
 18. Created `/campaigns/summer` from the editor, assembled and exactly previewed **Summer starts here**, published commit `7934576` containing only its nested page document, and verified the generated public route while `/admin` remained absent from production.
 19. Added an Image component, opened the project-image chooser, selected `/favicon.svg`, and verified the exact Astro iframe rerendered that source with no console errors while asset traversal and image validation remained constrained.
 20. Rebuilt a disposable Astro website from the package archive, edited search title, description, visibility, social image, and image description through **Search & sharing**, saved and reviewed the change, published commit `7e079e9`, and verified the native Astro title, description, robots, canonical, Open Graph, and Twitter output while the adopter's original homepage remained unchanged.
+21. Installed the archive into a fresh Astro website, generated its sitemap and native `robots.txt`, proved public and `noindex` route handling, and rebuilt after create, rename, and retire transitions so stale routes disappeared without manual discovery-file edits.
 
 ## What this resolves
 
@@ -62,8 +63,8 @@ The architecture is capable of delivering the intended constrained page-building
 - That an unfamiliar marketing user finds the current prototype intuitive without observation or training.
 - Publishing to a package registry, a stable versioned API, migrations, nonstandard/computed Astro config support, or compatibility across multiple Astro versions.
 - Remote Git push or pull requests, hosted deployment, authentication,
-  multi-user concurrency, approval workflows, sitemap and `robots.txt`
-  generation, image replacement/optimization, or full media management.
+  multi-user concurrency, approval workflows, image replacement/optimization,
+  or full media management.
 - Commercial demand for a managed product.
 
 These are distribution and product-validation questions. They no longer block the architectural thesis.

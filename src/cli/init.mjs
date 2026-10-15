@@ -22,6 +22,7 @@ const REQUIRED_PACKAGES = [
   "astro",
   "@astro-cms/core",
   "@astrojs/react",
+  "@astrojs/sitemap",
   "react",
   "react-dom",
 ];
@@ -44,6 +45,7 @@ const TEMPLATE_FILES = [
     "pages/astro-cms-demo/[...path].astro",
     "src/pages/astro-cms-demo/[...path].astro",
   ],
+  ["pages/robots.txt.ts", "src/pages/robots.txt.ts"],
   ["content/home.json", "content/pages/home.json"],
   ["public/astro-cms-placeholder.svg", "public/astro-cms-placeholder.svg"],
   ["ASTRO-CMS.md", "ASTRO-CMS.md"],
@@ -206,9 +208,25 @@ function lineIndent(source, index) {
   return source.slice(lineStart, index).match(/^\s*/)?.[0] ?? "";
 }
 
-function integrationLines(cmsIdentifier, reactIdentifier, includeReact) {
+function integrationLines(
+  cmsIdentifier,
+  reactIdentifier,
+  sitemapIdentifier,
+  searchFilterIdentifier,
+  includeReact,
+  includeSitemap,
+) {
   const lines = [];
   if (includeReact) lines.push(`${reactIdentifier}(),`);
+  if (includeSitemap) {
+    lines.push(
+      `${sitemapIdentifier}({`,
+      `  filter: ${searchFilterIdentifier}({`,
+      '    publicRoutePrefix: "/astro-cms-demo",',
+      "  }),",
+      "}),",
+    );
+  }
   lines.push(
     `${cmsIdentifier}({`,
     '  manifest: "src/astro-cms.manifest.ts",',
@@ -233,6 +251,18 @@ export function patchAstroConfig(source) {
     source,
     "@astrojs/react",
   );
+  const existingSitemapIdentifier = defaultImportIdentifier(
+    source,
+    "@astrojs/sitemap",
+  );
+  const hasSitemapCall =
+    existingSitemapIdentifier &&
+    new RegExp(`\\b${existingSitemapIdentifier}\\s*\\(`).test(
+      maskNonCode(source),
+    );
+  const hasSearchDiscoveryFilter = source.includes(
+    "@astro-cms/core/search-discovery",
+  );
   const cmsAlreadyCalled =
     existingCmsIdentifier &&
     new RegExp(`\\b${existingCmsIdentifier}\\s*\\(`).test(maskNonCode(source));
@@ -240,11 +270,22 @@ export function patchAstroConfig(source) {
   if (cmsAlreadyCalled) {
     return { source, changed: false, alreadyConfigured: true };
   }
+  if (hasSitemapCall && !hasSearchDiscoveryFilter) {
+    throw new AstroCmsInitError(
+      'The Astro config already has a sitemap integration. Initialization stopped so Astro-CMS does not replace its existing route policy. Add createAstroCmsSitemapFilter({ publicRoutePrefix: "/astro-cms-demo" }) to that integration, then run the initializer again.',
+    );
+  }
 
   const cmsIdentifier =
     existingCmsIdentifier ?? availableIdentifier(source, "astroCms");
   const reactIdentifier =
     existingReactIdentifier ?? availableIdentifier(source, "react");
+  const sitemapIdentifier =
+    existingSitemapIdentifier ?? availableIdentifier(source, "sitemap");
+  const searchFilterIdentifier = availableIdentifier(
+    source,
+    "createAstroCmsSitemapFilter",
+  );
   const masked = maskNonCode(source);
   const defineConfigMatch = /\bdefineConfig\s*\(/.exec(masked);
   if (!defineConfigMatch) {
@@ -274,6 +315,7 @@ export function patchAstroConfig(source) {
     existingReactIdentifier &&
     new RegExp(`\\b${existingReactIdentifier}\\s*\\(`).test(masked);
   const includeReact = !reactAlreadyCalled;
+  const includeSitemap = !hasSitemapCall;
   let patched;
 
   if (integrationsOpen !== undefined) {
@@ -287,7 +329,14 @@ export function patchAstroConfig(source) {
     }
     const isEmpty = !source.slice(integrationsOpen + 1, closing).trim();
     const insertion = `\n${indentLines(
-      integrationLines(cmsIdentifier, reactIdentifier, includeReact),
+      integrationLines(
+        cmsIdentifier,
+        reactIdentifier,
+        sitemapIdentifier,
+        searchFilterIdentifier,
+        includeReact,
+        includeSitemap,
+      ),
       itemIndent,
     )}${isEmpty ? `\n${propertyIndent}` : ""}`;
     patched =
@@ -298,7 +347,14 @@ export function patchAstroConfig(source) {
     const propertyIndent = `${lineIndent(source, objectStart)}  `;
     const itemIndent = `${propertyIndent}  `;
     const insertion = `\n${propertyIndent}integrations: [\n${indentLines(
-      integrationLines(cmsIdentifier, reactIdentifier, includeReact),
+      integrationLines(
+        cmsIdentifier,
+        reactIdentifier,
+        sitemapIdentifier,
+        searchFilterIdentifier,
+        includeReact,
+        includeSitemap,
+      ),
       itemIndent,
     )}\n${propertyIndent}],`;
     patched =
@@ -313,6 +369,14 @@ export function patchAstroConfig(source) {
   }
   if (!existingCmsIdentifier) {
     imports.push(`import ${cmsIdentifier} from "@astro-cms/core/integration";`);
+  }
+  if (!existingSitemapIdentifier) {
+    imports.push(`import ${sitemapIdentifier} from "@astrojs/sitemap";`);
+  }
+  if (!hasSearchDiscoveryFilter) {
+    imports.push(
+      `import { createAstroCmsSitemapFilter as ${searchFilterIdentifier} } from "@astro-cms/core/search-discovery";`,
+    );
   }
   if (imports.length > 0) patched = `${imports.join("\n")}\n${patched}`;
 

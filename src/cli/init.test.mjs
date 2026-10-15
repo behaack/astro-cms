@@ -24,6 +24,7 @@ async function createProject(options = {}) {
       astro: "^7.2.2",
       "@astro-cms/core": "^0.1.0",
       "@astrojs/react": "^6.0.2",
+      "@astrojs/sitemap": "^3.6.0",
       react: "^19.2.8",
       "react-dom": "^19.2.8",
       ...options.dependencies,
@@ -52,12 +53,12 @@ afterEach(async () => {
 });
 
 describe("Astro config patching", () => {
-  it("adds React and Astro-CMS while preserving an existing integration", () => {
-    const source = `import sitemap from "@astrojs/sitemap";
+  it("adds React, sitemap discovery, and Astro-CMS while preserving an existing integration", () => {
+    const source = `import compress from "astro-compress";
 import { defineConfig } from "astro/config";
 
 export default defineConfig({
-  integrations: [sitemap()],
+  integrations: [compress()],
 });
 `;
 
@@ -68,7 +69,12 @@ export default defineConfig({
     expect(result.source).toContain('from "@astro-cms/core/integration"');
     expect(result.source).toContain("react(),");
     expect(result.source).toContain("astroCms({");
-    expect(result.source).toContain("sitemap()");
+    expect(result.source).toContain('from "@astrojs/sitemap"');
+    expect(result.source).toContain('from "@astro-cms/core/search-discovery"');
+    expect(result.source).toContain("sitemap({");
+    expect(result.source).toContain("filter: createAstroCmsSitemapFilter({");
+    expect(result.source).toContain('publicRoutePrefix: "/astro-cms-demo"');
+    expect(result.source).toContain("compress()");
     expect(result.source).toContain('injectRoutes: "dev-only"');
   });
 
@@ -99,6 +105,32 @@ export default defineConfig({ integrations: [astroCms({
     });
   });
 
+  it("stops when an adopter already owns sitemap policy", () => {
+    const source = `import sitemap from "@astrojs/sitemap";
+import { defineConfig } from "astro/config";
+export default defineConfig({ integrations: [sitemap()] });
+`;
+
+    expect(() => patchAstroConfig(source)).toThrow(
+      "already has a sitemap integration",
+    );
+  });
+
+  it("preserves an existing sitemap that already uses the shared policy", () => {
+    const source = `import sitemap from "@astrojs/sitemap";
+import { createAstroCmsSitemapFilter } from "@astro-cms/core/search-discovery";
+import { defineConfig } from "astro/config";
+export default defineConfig({
+  integrations: [sitemap({ filter: createAstroCmsSitemapFilter() })],
+});
+`;
+
+    const result = patchAstroConfig(source);
+
+    expect(result.source.match(/sitemap\s*\(/g)).toHaveLength(1);
+    expect(result.source).toContain("astroCms({");
+  });
+
   it("rejects computed configuration functions", () => {
     expect(() =>
       patchAstroConfig(
@@ -117,6 +149,7 @@ describe("project initialization", () => {
     expect(first.created).toContain("src/astro-cms.manifest.ts");
     expect(first.created).toContain("src/components/AstroCmsSeoHead.astro");
     expect(first.created).toContain("src/pages/astro-cms-demo.astro");
+    expect(first.created).toContain("src/pages/robots.txt.ts");
     expect(first.created).toContain("content/pages/home.json");
     expect(first.created).toContain("ASTRO-CMS.md");
 
@@ -125,11 +158,12 @@ describe("project initialization", () => {
       "utf8",
     );
     expect(config).toContain('injectRoutes: "dev-only"');
+    expect(config).toContain("createAstroCmsSitemapFilter");
 
     const second = await initializeProject(projectDirectory);
     expect(second.configChanged).toBe(false);
     expect(second.created).toEqual([]);
-    expect(second.unchanged).toHaveLength(14);
+    expect(second.unchanged).toHaveLength(15);
   });
 
   it("reports a dry run without writing anything", async () => {
@@ -142,7 +176,7 @@ describe("project initialization", () => {
     const result = await initializeProject(projectDirectory, { dryRun: true });
 
     expect(result.dryRun).toBe(true);
-    expect(result.created).toHaveLength(14);
+    expect(result.created).toHaveLength(15);
     await expect(
       readFile(
         path.join(projectDirectory, "src/astro-cms.manifest.ts"),

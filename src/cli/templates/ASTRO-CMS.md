@@ -15,6 +15,12 @@ During local development:
 The production build excludes the editor, preview, and local filesystem APIs
 because `injectRoutes` is set to `"dev-only"`.
 
+The initializer also configures Astro's official sitemap integration and adds a
+native `robots.txt` route. Both use Astro's required `site` URL. The sitemap
+includes public Astro-CMS pages, excludes pages marked `noindex`, and excludes
+editor, preview, and local API routes. If the website already owns either file
+or its sitemap policy, initialization stops instead of overwriting it.
+
 ## Adapt it to this website
 
 1. Replace the starter files in `src/components/cms` with components that follow
@@ -89,7 +95,7 @@ Commit the initialized website once before using **Review & publish**:
 git add astro.config.mjs src/astro-cms.manifest.ts src/components/cms \
   src/components/AstroCmsSeoHead.astro \
   src/layouts/AstroCmsPreviewLayout.astro src/pages/astro-cms-demo.astro \
-  src/pages/astro-cms-demo \
+  src/pages/astro-cms-demo src/pages/robots.txt.ts \
   public/astro-cms-placeholder.svg content/pages/home.json ASTRO-CMS.md
 git commit -m "chore: add Astro-CMS starter"
 ```
